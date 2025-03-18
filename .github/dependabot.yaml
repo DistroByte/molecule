@@ -1,0 +1,15 @@
+version: 2
+updates:
+    - package-ecosystem: gomod
+      directory: "/"
+      schedule:
+          interval: daily
+          time: "04:00"
+      open-pull-requests-limit: 10
+      commit-message:
+          prefix: "chore(deps): update dependency"
+      labels:
+          - "dependencies"
+      pull-request-branch-name:
+          separator: /
+      target-branch: master

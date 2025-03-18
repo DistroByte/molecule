@@ -1,0 +1,37 @@
+openapi: 3.1.1
+
+info:
+  description: This is a simple API to list URLs and port mappings from a Nomad cluster
+  title: Molecule
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - description: Production server
+    url: https://api.molecule.dbyte.xyz
+
+paths:
+  /v1/urls:
+    $ref: v1/urls/index.yaml
+  /v1/urls/services:
+    $ref: v1/urls/service-urls.yaml
+  /v1/urls/hosts:
+    $ref: v1/urls/host-urls.yaml
+  /v1/urls/traefik:
+    $ref: v1/urls/traefik-urls.yaml
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+    BasicAuth:
+      type: http
+      scheme: basic
+
+security:
+  - {}

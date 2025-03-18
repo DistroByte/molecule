@@ -1,0 +1,6 @@
+router: chi
+outputAsLibrary: true
+onlyInterfaces: true
+enumClassPrefix: true
+addResponseHeaders: true
+packageName: moleculeserver

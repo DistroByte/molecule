@@ -1,0 +1,24 @@
+get:
+  summary: Get URLs
+  operationId: getURLs
+  parameters:
+    - name: print
+      in: query
+      description: Print the URLs
+      required: false
+      schema:
+        type: boolean
+        default: false
+  responses:
+    "200":
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            $ref: schemas/urls-list.json
+    "400":
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json
