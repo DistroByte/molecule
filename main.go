@@ -43,5 +43,5 @@ func main() {
 	}
 
 	// Start the HTTP server
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
 }

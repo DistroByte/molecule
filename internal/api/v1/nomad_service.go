@@ -7,6 +7,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/nomad/api"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -14,6 +15,7 @@ import (
 
 type NomadService struct {
 	nomadClient *api.Client
+	mu          sync.Mutex
 }
 
 var (
@@ -35,6 +37,9 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	allUrls := make(map[string]string)
 	for k, v := range serviceUrls {
@@ -64,6 +69,9 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 		s.processAllocation(allocation)
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	return serviceUrls, nil
 }
 
@@ -77,6 +85,9 @@ func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 		s.processAllocation(allocation)
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	return hostReservedPorts, nil
 }
 
@@ -89,6 +100,9 @@ func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	return servicePorts, nil
 }
@@ -136,6 +150,9 @@ func (s *NomadService) processTaskGroup(taskGroup *api.TaskGroup, allocation *ap
 		return
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if len(taskGroup.Networks[0].DynamicPorts) != 0 {
 		for _, port := range taskGroup.Networks[0].DynamicPorts {
 			if port.To != 0 {
@@ -164,6 +181,9 @@ func (s *NomadService) getTraefikURL(jobName string, taskName string, tags []str
 				url := strings.Split(tag, "(")[1]
 				url = strings.Split(url, ")")[0]
 				url = url[1 : len(url)-1]
+
+				s.mu.Lock()
+				defer s.mu.Unlock()
 
 				if jobName == taskName {
 					serviceUrls[jobName] = "https://" + url
