@@ -1,0 +1,7 @@
+{
+  "editor.tabSize": 2,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"]
+}

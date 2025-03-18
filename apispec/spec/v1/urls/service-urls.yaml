@@ -1,0 +1,16 @@
+get:
+  summary: Get service host and ports
+  operationId: getServiceURLs
+  responses:
+    "200":
+      description: successful operation
+      content:
+        application/json:
+          schema:
+            $ref: schemas/urls-list.json
+    "400":
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json
