@@ -6,18 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nomad URLs</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/main.js"></script>
+    <script src="/js/main.js" defer></script>
 </head>
 
 <body>
     <h1>Nomad URLs</h1>
     <ul id="url-list"></ul>
 
-    <h2>Host Port Reservations</h2>
-    <ul id="host-port-list"></ul>
+    <h2 class="collapsible-header">
+        Host Port Reservations <span class="caret">▼</span>
+    </h2>
+    <ul id="host-port-list" class="collapsible"></ul>
 
-    <h2>Service Reservations</h2>
-    <ul id="service-list"></ul>
+    <h2 class="collapsible-header">
+        Service Port Allocations <span class="caret">▼</span>
+    </h2>
+    <ul id="service-list" class="collapsible"></ul>
 </body>
 
 </html>

@@ -1,41 +1,60 @@
 body {
     font-family: monospace, sans-serif;
-    margin: 0;
+    margin: 20px;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #f9f9f9;
+    color: #333;
 }
 
-header {
-    background-color: #333;
-    color: #fff;
-    padding: 10px 0;
-    text-align: center;
+h1,
+h2 {
+    color: #0056b3;
 }
 
-nav {
+ul {
+    list-style-type: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+li {
+    background: #e9ecef;
     margin: 0;
     padding: 10px;
-    background-color: #444;
-    color: #fff;
-    text-align: center;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    height: auto;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
 
-nav a {
-    color: #fff;
-    margin: 0 10px;
+li a {
     text-decoration: none;
-}
-
-main {
-    padding: 20px;
-}
-
-footer {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 10px 0;
-    position: fixed;
-    bottom: 0;
+    color: inherit;
+    display: flex;
+    align-items: center;
     width: 100%;
+}
+
+li:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.collapsible {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.collapsible-header .caret {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.collapsible-header .caret.rotate {
+    transform: rotate(180deg);
 }
