@@ -9,6 +9,8 @@ body {
 h1,
 h2 {
     color: #0056b3;
+    user-select: none;
+    cursor: pointer;
 }
 
 ul {
@@ -53,8 +55,25 @@ li:hover {
 .collapsible-header .caret {
     display: inline-block;
     transition: transform 0.3s ease;
+    transform: rotate(90deg);
+    user-select: none;
 }
 
 .collapsible-header .caret.rotate {
     transform: rotate(180deg);
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-container h2,
+.header-container h1 {
+    margin: 0;
+}
+
+.header-container button {
+    margin-left: 10px;
 }

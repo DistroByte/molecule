@@ -10,17 +10,32 @@
 </head>
 
 <body>
-    <h1>Nomad URLs</h1>
+    <div class="header-container">
+        <h1>Nomad URLs</h1>
+        <button id="refresh-urls-button">
+            Refresh URLs
+        </button>
+    </div>
     <ul id="url-list"></ul>
 
-    <h2 class="collapsible-header">
-        Host Port Reservations <span class="caret">▼</span>
-    </h2>
+    <div class="header-container">
+        <h2 class="collapsible-header">
+            Host Port Reservations <span class="caret">^</span>
+        </h2>
+        <button id="refresh-hosts-button">
+            Refresh Hosts
+        </button>
+    </div>
     <ul id="host-port-list" class="collapsible"></ul>
 
-    <h2 class="collapsible-header">
-        Service Port Allocations <span class="caret">▼</span>
-    </h2>
+    <div class="header-container">
+        <h2 class="collapsible-header">
+            Service Port Allocations <span class="caret">^</span>
+        </h2>
+        <button id="refresh-services-button">
+            Refresh Services
+        </button>
+    </div>
     <ul id="service-list" class="collapsible"></ul>
 </body>
 

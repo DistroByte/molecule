@@ -28,8 +28,8 @@ func main() {
 	}
 
 	nomadService := v1.NewNomadService(nomadClient)
-	customService := v1.NewCustomAPIService(nomadService)
-	generatedController := generated.NewDefaultAPIController(customService)
+	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
+	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -38,7 +38,7 @@ func main() {
 	fs := http.StripPrefix("/", http.FileServer(http.Dir("./web")))
 	r.Handle("/*", fs)
 
-	for _, route := range generatedController.Routes() {
+	for _, route := range moleculeAPIController.Routes() {
 		r.Method(route.Method, route.Pattern, route.HandlerFunc)
 	}
 

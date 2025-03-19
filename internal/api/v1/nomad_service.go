@@ -19,12 +19,18 @@ type NomadService struct {
 }
 
 var (
+	standardURLs      = make(map[string]string)
 	serviceUrls       = make(map[string]string)
 	hostReservedPorts = make(map[string]string)
 	servicePorts      = make(map[string]string)
 )
 
 func NewNomadService(nomadClient *api.Client) *NomadService {
+	standardURLs["nomad"] = "http://zeus.internal:4646"
+	standardURLs["consul"] = "http://zeus.internal:8500"
+	standardURLs["traefik"] = "http://zeus.internal:8081"
+	standardURLs["plausible"] = "https://plausible.dbyte.xyz"
+
 	return &NomadService{nomadClient: nomadClient}
 }
 
@@ -51,6 +57,9 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 	for k, v := range servicePorts {
 		allUrls[k] = v
 	}
+	for k, v := range standardURLs {
+		allUrls[k] = v
+	}
 
 	if print {
 		prettyPrint()
@@ -71,6 +80,10 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	for k, v := range standardURLs {
+		serviceUrls[k] = v
+	}
 
 	return serviceUrls, nil
 }

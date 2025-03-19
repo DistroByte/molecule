@@ -9,7 +9,7 @@ type APIController struct {
 	service openapi.DefaultAPIServicer
 }
 
-func NewCustomAPIController(service openapi.DefaultAPIServicer) *APIController {
+func NewMoleculeAPIController(service openapi.DefaultAPIServicer) *APIController {
 	return &APIController{service: service}
 }
 

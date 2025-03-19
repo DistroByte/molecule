@@ -7,15 +7,15 @@ import (
 	openapi "github.com/DistroByte/molecule/internal/generated/go"
 )
 
-type CustomAPIService struct {
+type MoleculeAPIService struct {
 	nomadService *NomadService
 }
 
-func NewCustomAPIService(nomadService *NomadService) *CustomAPIService {
-	return &CustomAPIService{nomadService: nomadService}
+func NewMoleculeAPIService(nomadService *NomadService) *MoleculeAPIService {
+	return &MoleculeAPIService{nomadService: nomadService}
 }
 
-func (s *CustomAPIService) GetURLs(ctx context.Context, print bool) (openapi.ImplResponse, error) {
+func (s *MoleculeAPIService) GetURLs(ctx context.Context, print bool) (openapi.ImplResponse, error) {
 	urls, err := s.nomadService.ExtractAll(print)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, err.Error()), nil
@@ -25,7 +25,7 @@ func (s *CustomAPIService) GetURLs(ctx context.Context, print bool) (openapi.Imp
 	return openapi.Response(http.StatusOK, urls), nil
 }
 
-func (s *CustomAPIService) GetHostURLs(ctx context.Context) (openapi.ImplResponse, error) {
+func (s *MoleculeAPIService) GetHostURLs(ctx context.Context) (openapi.ImplResponse, error) {
 	urls, err := s.nomadService.ExtractHostPorts()
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, err.Error()), nil
@@ -35,7 +35,7 @@ func (s *CustomAPIService) GetHostURLs(ctx context.Context) (openapi.ImplRespons
 	return openapi.Response(http.StatusOK, urls), nil
 }
 
-func (s *CustomAPIService) GetServiceURLs(ctx context.Context) (openapi.ImplResponse, error) {
+func (s *MoleculeAPIService) GetServiceURLs(ctx context.Context) (openapi.ImplResponse, error) {
 	urls, err := s.nomadService.ExtractServicePorts()
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, err.Error()), nil
@@ -45,7 +45,7 @@ func (s *CustomAPIService) GetServiceURLs(ctx context.Context) (openapi.ImplResp
 	return openapi.Response(http.StatusOK, urls), nil
 }
 
-func (s *CustomAPIService) GetTraefikURLs(ctx context.Context) (openapi.ImplResponse, error) {
+func (s *MoleculeAPIService) GetTraefikURLs(ctx context.Context) (openapi.ImplResponse, error) {
 	urls, err := s.nomadService.ExtractURLs()
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, err.Error()), nil
@@ -55,6 +55,6 @@ func (s *CustomAPIService) GetTraefikURLs(ctx context.Context) (openapi.ImplResp
 	return openapi.Response(http.StatusOK, urls), nil
 }
 
-func (s *CustomAPIService) Healthcheck(ctx context.Context) (openapi.ImplResponse, error) {
+func (s *MoleculeAPIService) Healthcheck(ctx context.Context) (openapi.ImplResponse, error) {
 	return openapi.Response(http.StatusOK, "OK"), nil
 }
