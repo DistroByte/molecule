@@ -1,6 +1,6 @@
 module github.com/DistroByte/molecule
 
-go 1.24.1
+go 1.23.6
 
 require (
 	github.com/getkin/kin-openapi v0.131.0

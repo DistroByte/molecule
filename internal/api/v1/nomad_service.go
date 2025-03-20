@@ -49,6 +49,10 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 		return nil, err
 	}
 
+	serviceUrls = make(map[string]string)
+	hostReservedPorts = make(map[string]string)
+	servicePorts = make(map[string]string)
+
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
 	}
@@ -84,6 +88,8 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 		return nil, err
 	}
 
+	serviceUrls = make(map[string]string)
+
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
 	}
@@ -105,6 +111,8 @@ func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 		return nil, err
 	}
 
+	hostReservedPorts = make(map[string]string)
+
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
 	}
@@ -121,6 +129,8 @@ func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 		log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
+
+	servicePorts = make(map[string]string)
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)

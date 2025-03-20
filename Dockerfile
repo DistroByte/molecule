@@ -1,4 +1,4 @@
-FROM golang:1.24.1 as builder
+FROM golang:1.23.6 as builder
 
 COPY . /go/src/github.com/DistroByte/molocule
 
