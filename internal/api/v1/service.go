@@ -8,10 +8,10 @@ import (
 )
 
 type MoleculeAPIService struct {
-	nomadService *NomadService
+	nomadService NomadServiceInterface
 }
 
-func NewMoleculeAPIService(nomadService *NomadService) *MoleculeAPIService {
+func NewMoleculeAPIService(nomadService NomadServiceInterface) *MoleculeAPIService {
 	return &MoleculeAPIService{nomadService: nomadService}
 }
 

@@ -11,11 +11,19 @@ import (
 
 	"github.com/hashicorp/nomad/api"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/rs/zerolog/log"
 )
 
 type NomadService struct {
 	nomadClient *api.Client
 	mu          sync.Mutex
+}
+
+type NomadServiceInterface interface {
+	ExtractAll(print bool) (map[string]string, error)
+	ExtractURLs() (map[string]string, error)
+	ExtractHostPorts() (map[string]string, error)
+	ExtractServicePorts() (map[string]string, error)
 }
 
 var (
@@ -25,7 +33,7 @@ var (
 	servicePorts      = make(map[string]string)
 )
 
-func NewNomadService(nomadClient *api.Client) *NomadService {
+func NewNomadService(nomadClient *api.Client) NomadServiceInterface {
 	standardURLs["nomad"] = "http://zeus.internal:4646"
 	standardURLs["consul"] = "http://zeus.internal:8500"
 	standardURLs["traefik"] = "http://zeus.internal:8081"
@@ -37,6 +45,7 @@ func NewNomadService(nomadClient *api.Client) *NomadService {
 func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -71,6 +80,7 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 func (s *NomadService) ExtractURLs() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -91,6 +101,7 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -107,6 +118,7 @@ func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -125,19 +137,19 @@ func (s *NomadService) processAllocation(allocation *api.AllocationListStub) {
 
 	allocationInfo, _, err := s.nomadClient.Allocations().Info(allocation.ID, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to get allocation info")
 		return
 	}
 
 	node, _, err := s.nomadClient.Nodes().Info(allocation.NodeID, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to get node info")
 		return
 	}
 
 	job, _, err := s.nomadClient.Jobs().Info(allocation.JobID, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err).Msg("Failed to get job info")
 		return
 	}
 

@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/hashicorp/nomad/api"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	v1 "github.com/DistroByte/molecule/internal/api/v1"
 	generated "github.com/DistroByte/molecule/internal/generated/go"
@@ -21,13 +22,25 @@ var (
 )
 
 func main() {
-	nomadClient, err := api.NewClient(&api.Config{Address: httpUrl})
-	if err != nil {
-		fmt.Println(err)
-		return
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	var nomadService v1.NomadServiceInterface
+
+	if os.Getenv("PROD") == "true" {
+		nomadClient, err := api.NewClient(&api.Config{Address: httpUrl})
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to create Nomad client")
+			return
+		}
+		nomadService = v1.NewNomadService(nomadClient)
+	} else {
+		nomadService = v1.NewMockNomadService()
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Debug().Msg("running locally in debug mode")
 	}
 
-	nomadService := v1.NewNomadService(nomadClient)
 	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
 	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
 
@@ -42,6 +55,6 @@ func main() {
 		r.Method(route.Method, route.Pattern, route.HandlerFunc)
 	}
 
-	// Start the HTTP server
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
+	log.Info().Msgf("Starting server on :8080")
+	log.Fatal().Err(http.ListenAndServe(":8080", r))
 }
