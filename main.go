@@ -20,8 +20,7 @@ import (
 //go:generate docker run -u 1000:1000 --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/apispec/spec/index.yaml -g go-server -o /local/internal/generated -c /local/apispec/server-config.yaml
 
 var (
-	nomadUrl   = "http://zeus.internal:4646"
-	traefikUrl = "http://hermes.internal:8081"
+	nomadUrl = "http://zeus.internal:4646"
 )
 
 func main() {
