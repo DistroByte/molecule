@@ -3,9 +3,11 @@ package main
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 	"github.com/hashicorp/nomad/api"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -18,7 +20,8 @@ import (
 //go:generate docker run -u 1000:1000 --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/apispec/spec/index.yaml -g go-server -o /local/internal/generated -c /local/apispec/server-config.yaml
 
 var (
-	httpUrl = "http://zeus.internal:4646"
+	nomadUrl   = "http://zeus.internal:4646"
+	traefikUrl = "http://hermes.internal:8081"
 )
 
 func main() {
@@ -28,7 +31,7 @@ func main() {
 	var nomadService v1.NomadServiceInterface
 
 	if os.Getenv("PROD") == "true" {
-		nomadClient, err := api.NewClient(&api.Config{Address: httpUrl})
+		nomadClient, err := api.NewClient(&api.Config{Address: nomadUrl})
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to create Nomad client")
 			return
@@ -45,7 +48,8 @@ func main() {
 	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(requestIDMiddleware)
+	r.Use(zerologMiddleware)
 
 	// Serve static files from the / path
 	fs := http.StripPrefix("/", http.FileServer(http.Dir("./web")))
@@ -57,4 +61,35 @@ func main() {
 
 	log.Info().Msgf("Starting server on :8080")
 	log.Fatal().Err(http.ListenAndServe(":8080", r))
+}
+
+func requestIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestID := uuid.New().String()
+		logger := log.With().Str("request_id", requestID).Logger()
+		r = r.WithContext(logger.WithContext(r.Context()))
+		w.Header().Set("X-Request-ID", requestID)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func zerologMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+		logger := zerolog.Ctx(r.Context())
+		defer func() {
+			logger.Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("status", ww.Status()).
+				Int("bytes", ww.BytesWritten()).
+				Str("remote", r.RemoteAddr).
+				Dur("duration", time.Since(start)).
+				Msg("handled request")
+		}()
+
+		next.ServeHTTP(ww, r)
+	})
 }

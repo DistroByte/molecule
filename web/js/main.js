@@ -5,8 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial data fetch
   fetchData("/v1/urls/traefik", urlList, true);
-  fetchData("/v1/urls/hosts", hostPortList);
-  fetchData("/v1/urls/services", serviceList);
 
   // Set up collapsible headers
   setupCollapsibleHeaders();
