@@ -37,6 +37,7 @@ func NewNomadService(nomadClient *api.Client) NomadServiceInterface {
 	standardURLs["nomad"] = "http://zeus.internal:4646"
 	standardURLs["consul"] = "http://zeus.internal:8500"
 	standardURLs["traefik"] = "http://hermes.internal:8081"
+	standardURLs["synology-dsm"] = "https://dionysus.internal:5001"
 	standardURLs["plausible"] = "https://plausible.dbyte.xyz"
 	standardURLs["photos"] = "https://photos.dbyte.xyz"
 	standardURLs["drive"] = "https://drive.dbyte.xyz"
