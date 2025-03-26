@@ -34,3 +34,13 @@ func (m *MockNomadService) ExtractServicePorts() (map[string]string, error) {
 	log.Debug().Msg("Mock: ExtractServicePorts called")
 	return urls, nil
 }
+
+func (m *MockNomadService) GetServiceStatus(service string) (map[string]string, error) {
+	log.Debug().Msg("Mock: GetServiceStatus called")
+	return urls, nil
+}
+
+func (m *MockNomadService) RestartServiceAllocations(service string) (map[string]string, error) {
+	log.Debug().Msg("Mock: RestartServiceAllocations called")
+	return urls, nil
+}

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nomad URLs</title>
-    <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/main.js" defer></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/main.js" defer></script>
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
 </head>
 
@@ -38,6 +38,20 @@
         </button>
     </div>
     <ul id="service-list" class="collapsible"></ul>
+
+    <div id="auth-modal">
+        <div class="auth-modal-content">
+            <h3>Enter API Key</h3>
+            <form id="auth-form">
+                <div class="auth-input-container">
+                    <input type="password" id="auth-apikey" placeholder="API Key" required />
+                    <button type="button" id="show-apikey">Show</button>
+                </div>
+                <button type="submit" class="auth-submit">Submit</button>
+                <button type="button" id="auth-cancel" class="auth-cancel">Cancel</button>
+            </form>
+        </div>
+    </div>
 </body>
 
 </html>

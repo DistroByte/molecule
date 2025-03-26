@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/nomad/api"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 
 	v1 "github.com/DistroByte/molecule/internal/api/v1"
 	generated "github.com/DistroByte/molecule/internal/generated/go"
@@ -46,17 +48,56 @@ func main() {
 	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
 	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
 
+	// Add X-API-KEY authentication
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+		log.Fatal().Msg("API_KEY environment variable is required")
+	}
+
 	r := chi.NewRouter()
 	r.Use(requestIDMiddleware)
 	r.Use(zerologMiddleware)
 
-	// Serve static files from the / path
-	fs := http.StripPrefix("/", http.FileServer(http.Dir("./web")))
-	r.Handle("/*", fs)
+	// Serve static HTML content from the root
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./web/index.html")
+	})
 
+	r.Route("/static", func(staticRouter chi.Router) {
+		staticRouter.Use(middleware.NoCache)
+		staticRouter.Handle("/*", http.StripPrefix("/static", http.FileServer(http.Dir("./web"))))
+	})
+
+	r.Get("/api/spec.json", func(w http.ResponseWriter, r *http.Request) {
+		specPath := "./apispec/spec/index.yaml"
+		yamlData, err := os.ReadFile(specPath)
+		if err != nil {
+			http.Error(w, "Failed to read OpenAPI spec", http.StatusInternalServerError)
+			return
+		}
+
+		var jsonData map[string]interface{}
+		if err := yaml.Unmarshal(yamlData, &jsonData); err != nil {
+			http.Error(w, "Failed to parse OpenAPI spec", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(jsonData); err != nil {
+			http.Error(w, "Failed to encode OpenAPI spec as JSON", http.StatusInternalServerError)
+		}
+	})
+
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(apiKeyAuthHandler(apiKey))
 	for _, route := range moleculeAPIController.Routes() {
-		r.Method(route.Method, route.Pattern, route.HandlerFunc)
+		if requiresAuth(route.Pattern) {
+			apiRouter.Method(route.Method, route.Pattern, route.HandlerFunc)
+		} else {
+			r.Method(route.Method, route.Pattern, route.HandlerFunc)
+		}
 	}
+	r.Mount("/", apiRouter)
 
 	log.Info().Msgf("Starting server on :8080")
 	log.Fatal().Err(http.ListenAndServe(":8080", r))
@@ -91,4 +132,31 @@ func zerologMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(ww, r)
 	})
+}
+
+func apiKeyAuthHandler(key string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("X-API-KEY") != key {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func requiresAuth(pattern string) bool {
+	log.Debug().Msgf("Checking if route %s requires authentication", pattern)
+	authenticatedRoutes := []string{
+		"/v1/services/{service}/alloc-restart",
+	}
+
+	for _, route := range authenticatedRoutes {
+		if route == pattern {
+			log.Debug().Msgf("Route %s requires authentication", pattern)
+			return true
+		}
+	}
+	return false
 }

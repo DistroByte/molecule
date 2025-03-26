@@ -13,6 +13,8 @@ package moleculeserver
 import (
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // DefaultAPIController binds http requests to an api service and writes the service results to the http response
@@ -72,6 +74,16 @@ func (c *DefaultAPIController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/v1/urls/traefik",
 			c.GetTraefikURLs,
+		},
+		"GetServiceStatus": Route{
+			strings.ToUpper("Get"),
+			"/v1/services/{service}",
+			c.GetServiceStatus,
+		},
+		"RestartServiceAllocations": Route{
+			strings.ToUpper("Post"),
+			"/v1/services/{service}/alloc-restart",
+			c.RestartServiceAllocations,
 		},
 	}
 }
@@ -148,6 +160,40 @@ func (c *DefaultAPIController) GetHostURLs(w http.ResponseWriter, r *http.Reques
 // GetTraefikURLs - Get Traefik proxied URLs
 func (c *DefaultAPIController) GetTraefikURLs(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetTraefikURLs(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	_ = EncodeJSONResponse(result.Body, &result.Code, result.Headers, w)
+}
+
+// GetServiceStatus - Get the status of a service
+func (c *DefaultAPIController) GetServiceStatus(w http.ResponseWriter, r *http.Request) {
+	serviceParam := chi.URLParam(r, "service")
+	if serviceParam == "" {
+		c.errorHandler(w, r, &RequiredError{"service"}, nil)
+		return
+	}
+	result, err := c.service.GetServiceStatus(r.Context(), serviceParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	_ = EncodeJSONResponse(result.Body, &result.Code, result.Headers, w)
+}
+
+// RestartServiceAllocations - Restart all allocations of a service
+func (c *DefaultAPIController) RestartServiceAllocations(w http.ResponseWriter, r *http.Request) {
+	serviceParam := chi.URLParam(r, "service")
+	if serviceParam == "" {
+		c.errorHandler(w, r, &RequiredError{"service"}, nil)
+		return
+	}
+	result, err := c.service.RestartServiceAllocations(r.Context(), serviceParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
