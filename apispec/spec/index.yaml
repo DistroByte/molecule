@@ -23,6 +23,12 @@ paths:
     $ref: v1/urls/host-urls.yaml
   /v1/urls/traefik:
     $ref: v1/urls/traefik-urls.yaml
+  /v1/services/{service}:
+    $ref: v1/services/index.yaml
+  /v1/services/{service}/alloc-restart:
+    $ref: v1/services/alloc-restart.yaml
+    security:
+      - ApiKeyAuth: []
 
 components:
   securitySchemes:

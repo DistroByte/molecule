@@ -1,0 +1,24 @@
+parameters:
+  - name: service
+    in: path
+    required: true
+    schema:
+      $ref: schemas/service-name.json
+    description: The name of the service
+
+get:
+  summary: Get the status of a service
+  operationId: get_service_status
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: schemas/service-status.json
+    "400":
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json

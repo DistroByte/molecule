@@ -26,6 +26,8 @@ type DefaultAPIRouter interface {
 	GetServiceURLs(http.ResponseWriter, *http.Request)
 	GetHostURLs(http.ResponseWriter, *http.Request)
 	GetTraefikURLs(http.ResponseWriter, *http.Request)
+	GetServiceStatus(http.ResponseWriter, *http.Request)
+	RestartServiceAllocations(http.ResponseWriter, *http.Request)
 }
 
 
@@ -39,4 +41,6 @@ type DefaultAPIServicer interface {
 	GetServiceURLs(context.Context) (ImplResponse, error)
 	GetHostURLs(context.Context) (ImplResponse, error)
 	GetTraefikURLs(context.Context) (ImplResponse, error)
+	GetServiceStatus(context.Context, string) (ImplResponse, error)
+	RestartServiceAllocations(context.Context, string) (ImplResponse, error)
 }

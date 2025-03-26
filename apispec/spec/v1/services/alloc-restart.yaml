@@ -1,0 +1,30 @@
+parameters:
+  - name: service
+    in: path
+    required: true
+    schema:
+      $ref: schemas/service-name.json
+    description: The name of the service
+
+post:
+  summary: Restart all allocations of a service
+  operationId: restart_service_allocations
+  responses:
+    "200":
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json
+    "400":
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json
+    "500":
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: schemas/generic-response.json

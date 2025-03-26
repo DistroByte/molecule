@@ -79,19 +79,22 @@ const setupCopyableItems = (listElement) => {
         .then(() => {
           showCopyNotification(`Copied ${valueToCopy}!`);
         })
-        .catch((err) => console.error("Failed to copy text: ", err));
+        .catch((err) => {
+          console.error("Failed to copy text:", err);
+          showCopyNotification("Failed to copy text.", true);
+        });
     });
   });
 };
 
 // Show a notification when a string is copied
-const showCopyNotification = (message) => {
+const showCopyNotification = (message, isError = false) => {
   const notification = document.createElement("div");
   notification.textContent = message;
   notification.style.position = "fixed";
   notification.style.bottom = "20px";
   notification.style.right = "20px";
-  notification.style.backgroundColor = "#4caf50";
+  notification.style.backgroundColor = isError ? "#f44336" : "#4caf50"; // Red for errors, green for success
   notification.style.color = "#fff";
   notification.style.padding = "10px 20px";
   notification.style.borderRadius = "5px";
@@ -173,8 +176,116 @@ const generateListItemTemplate = (
           }
           <span>${service}</span>
         </a>
+        <button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>
       </li>`;
   }
 
-  return `<li class="copyable" data-value="${value}">${service}: ${value}</li>`;
+  return `
+    <li class="copyable" data-value="${value}">
+      ${service}: ${value}
+      <button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>
+    </li>`;
 };
+
+document.addEventListener("click", (event) => {
+  if (event.target.classList.contains("restart-button")) {
+    const service = event.target.getAttribute("data-service");
+    restartService(service);
+  }
+});
+
+const restartService = (service) => {
+  console.log(`Restarting service: ${service}`);
+
+  // Show the authentication modal
+  const authModal = document.getElementById("auth-modal");
+  const authForm = document.getElementById("auth-form");
+  const authCancel = document.getElementById("auth-cancel");
+
+  authModal.style.display = "flex";
+
+  // Handle form submission
+  const handleAuthSubmit = (event) => {
+    event.preventDefault();
+
+    const apiKey = document.getElementById("auth-apikey").value;
+
+    if (!apiKey) {
+      alert("An API key is required to restart the service.");
+      return;
+    }
+
+    // Hide the modal
+    authModal.style.display = "none";
+
+    // Remove event listeners to prevent duplicate submissions
+    authForm.removeEventListener("submit", handleAuthSubmit);
+    authCancel.removeEventListener("click", handleAuthCancel);
+
+    // Make the fetch request
+    fetch(`/v1/services/${service}/alloc-restart`, {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to restart service: ${response.statusText}`);
+        }
+        showRestartNotification(`Service ${service} restarted successfully!`);
+      })
+      .catch((error) => {
+        console.error(`Error restarting service ${service}:`, error);
+        showRestartNotification(`Failed to restart service ${service}.`, true);
+      });
+  };
+
+  // Handle cancel button click
+  const handleAuthCancel = () => {
+    authModal.style.display = "none";
+    authForm.removeEventListener("submit", handleAuthSubmit);
+    authCancel.removeEventListener("click", handleAuthCancel);
+  };
+
+  authForm.addEventListener("submit", handleAuthSubmit);
+  authCancel.addEventListener("click", handleAuthCancel);
+};
+
+// Function to show a restart notification
+const showRestartNotification = (message, isError = false) => {
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.style.position = "fixed";
+  notification.style.bottom = "20px";
+  notification.style.right = "20px";
+  notification.style.backgroundColor = isError ? "#f44336" : "#4caf50"; // Red for errors, green for success
+  notification.style.color = "#fff";
+  notification.style.padding = "10px 20px";
+  notification.style.borderRadius = "5px";
+  notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.2)";
+  notification.style.zIndex = "1000";
+  notification.style.fontSize = "14px";
+
+  document.body.appendChild(notification);
+
+  // Remove the notification after 3 seconds
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const showApiKeyButton = document.getElementById("show-apikey");
+  const apiKeyInput = document.getElementById("auth-apikey");
+
+  showApiKeyButton.addEventListener("click", () => {
+    if (apiKeyInput.type === "password") {
+      apiKeyInput.type = "text";
+      showApiKeyButton.textContent = "Hide"; // Change icon to "hide"
+    } else {
+      apiKeyInput.type = "password";
+      showApiKeyButton.textContent = "Show"; // Change icon to "show"
+    }
+  });
+});

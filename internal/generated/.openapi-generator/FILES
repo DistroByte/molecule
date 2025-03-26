@@ -1,4 +1,5 @@
 README.md
+api/openapi.yaml
 go/api.go
 go/api_default.go
 go/error.go

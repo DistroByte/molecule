@@ -24,6 +24,8 @@ type NomadServiceInterface interface {
 	ExtractURLs() (map[string]string, error)
 	ExtractHostPorts() (map[string]string, error)
 	ExtractServicePorts() (map[string]string, error)
+	GetServiceStatus(service string) (map[string]string, error)
+	RestartServiceAllocations(service string) (map[string]string, error)
 }
 
 var (
@@ -42,7 +44,7 @@ func NewNomadService(nomadClient *api.Client) NomadServiceInterface {
 	standardURLs["photos"] = "https://photos.dbyte.xyz"
 	standardURLs["drive"] = "https://drive.dbyte.xyz"
 	standardURLs["plex"] = "https://video.dbyte.xyz"
-	standardURLs["ghost"] = "https://admin-photo.james-hackett.ie"
+	standardURLs["ghost"] = "https://admin-photo.james-hackett.ie/ghost"
 
 	return &NomadService{nomadClient: nomadClient}
 }
@@ -145,6 +147,72 @@ func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 	defer s.mu.Unlock()
 
 	return servicePorts, nil
+}
+
+func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, error) {
+	allocations, _, err := s.nomadClient.Allocations().List(nil)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
+		return nil, err
+	}
+
+	serviceUrls = make(map[string]string)
+	hostReservedPorts = make(map[string]string)
+	servicePorts = make(map[string]string)
+
+	for _, allocation := range allocations {
+		s.processAllocation(allocation)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if val, ok := serviceUrls[serviceName]; ok {
+		return map[string]string{serviceName: val}, nil
+	}
+
+	if val, ok := hostReservedPorts[serviceName]; ok {
+		return map[string]string{serviceName: val}, nil
+	}
+
+	if val, ok := servicePorts[serviceName]; ok {
+		return map[string]string{serviceName: val}, nil
+	}
+
+	return nil, nil
+}
+
+// when called, this function will restart all allocations for a specific service
+// this is useful when a new version of a service is built and you want to restart all instances
+func (s *NomadService) RestartServiceAllocations(serviceName string) (map[string]string, error) {
+	allocations, _, err := s.nomadClient.Allocations().List(nil)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list allocations")
+		return nil, err
+	}
+
+	for _, allocation := range allocations {
+		job, _, err := s.nomadClient.Jobs().Info(allocation.JobID, nil)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get job info")
+			return nil, err
+		}
+
+		if *job.Name == serviceName {
+			allocationInfo, _, err := s.nomadClient.Allocations().Info(allocation.ID, nil)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get allocation info")
+				return nil, err
+			}
+			err = s.nomadClient.Allocations().Restart(allocationInfo, "", nil)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to restart service allocations")
+				return nil, err
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 func (s *NomadService) processAllocation(allocation *api.AllocationListStub) {

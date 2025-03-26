@@ -1,0 +1,236 @@
+openapi: 3.1.1
+info:
+  description: This is a simple API to list URLs and port mappings from a Nomad cluster
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Molecule
+  version: 1.0.0
+servers:
+- description: Production server
+  url: https://api.molecule.dbyte.xyz
+security:
+- {}
+paths:
+  /health:
+    get:
+      operationId: healthcheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                example: OK
+                type: string
+          description: successful operation
+        "400":
+          description: Invalid request
+      summary: Healthcheck endpoint
+  /v1/urls:
+    get:
+      operationId: getURLs
+      parameters:
+      - description: Print the URLs
+        explode: true
+        in: query
+        name: print
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                type: array
+          description: successful operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+      summary: Get URLs
+  /v1/urls/services:
+    get:
+      operationId: getServiceURLs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                type: array
+          description: successful operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+      summary: Get service host and ports
+  /v1/urls/hosts:
+    get:
+      operationId: getHostURLs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                type: array
+          description: successful operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+      summary: Get host reserverd URLs
+  /v1/urls/traefik:
+    get:
+      operationId: getTraefikURLs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                type: array
+          description: successful operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+      summary: Get Traefik proxied URLs
+  /v1/services/{service}:
+    get:
+      operationId: get_service_status
+      parameters:
+      - description: The name of the service
+        explode: false
+        in: path
+        name: service
+        required: true
+        schema:
+          example: molecule
+          pattern: "^[a-z0-9-]+$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                example: running
+                pattern: "^[a-z0-9-]+$"
+                type: string
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+      summary: Get the status of a service
+    parameters:
+    - description: The name of the service
+      explode: false
+      in: path
+      name: service
+      required: true
+      schema:
+        example: molecule
+        pattern: "^[a-z0-9-]+$"
+        type: string
+      style: simple
+  /v1/services/{service}/alloc-restart:
+    parameters:
+    - description: The name of the service
+      explode: false
+      in: path
+      name: service
+      required: true
+      schema:
+        example: molecule
+        pattern: "^[a-z0-9-]+$"
+        type: string
+      style: simple
+    post:
+      operationId: restart_service_allocations
+      parameters:
+      - description: The name of the service
+        explode: false
+        in: path
+        name: service
+        required: true
+        schema:
+          example: molecule
+          pattern: "^[a-z0-9-]+$"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Invalid request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getURLs_400_response'
+          description: Internal server error
+      summary: Restart all allocations of a service
+components:
+  schemas:
+    getURLs_200_response_inner:
+      example:
+        service: service
+        url: url
+      properties:
+        service:
+          description: The service that the URL belongs to.
+          type: string
+        url:
+          description: The URL.
+          type: string
+      required:
+      - service
+      - url
+    getURLs_400_response:
+      example:
+        message: message
+        status: success
+      properties:
+        status:
+          enum:
+          - success
+          - error
+          type: string
+        message:
+          type: string
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: X-API-Key
+      type: apiKey
+    BasicAuth:
+      scheme: basic
+      type: http
