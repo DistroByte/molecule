@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/DistroByte/molecule/logger"
 	"github.com/hashicorp/nomad/api"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/rs/zerolog/log"
 )
 
 type NomadService struct {
@@ -35,16 +35,10 @@ var (
 	servicePorts      = make(map[string]string)
 )
 
-func NewNomadService(nomadClient *api.Client) NomadServiceInterface {
-	standardURLs["nomad"] = "http://zeus.internal:4646"
-	standardURLs["consul"] = "http://zeus.internal:8500"
-	standardURLs["traefik"] = "http://hermes.internal:8081"
-	standardURLs["synology-dsm"] = "https://dionysus.internal:5001"
-	standardURLs["plausible"] = "https://plausible.dbyte.xyz"
-	standardURLs["photos"] = "https://photos.dbyte.xyz"
-	standardURLs["drive"] = "https://drive.dbyte.xyz"
-	standardURLs["plex"] = "https://video.dbyte.xyz"
-	standardURLs["ghost"] = "https://admin-photo.james-hackett.ie/ghost"
+func NewNomadService(nomadClient *api.Client, staticUrls map[string]string) NomadServiceInterface {
+	for key, value := range staticUrls {
+		standardURLs[key] = value
+	}
 
 	return &NomadService{nomadClient: nomadClient}
 }
@@ -52,7 +46,7 @@ func NewNomadService(nomadClient *api.Client) NomadServiceInterface {
 func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -91,7 +85,7 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 func (s *NomadService) ExtractURLs() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -114,7 +108,7 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -133,7 +127,7 @@ func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -152,7 +146,7 @@ func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
@@ -187,26 +181,26 @@ func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, 
 func (s *NomadService) RestartServiceAllocations(serviceName string) (map[string]string, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list allocations")
+		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
 	for _, allocation := range allocations {
 		job, _, err := s.nomadClient.Jobs().Info(allocation.JobID, nil)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to get job info")
+			logger.Log.Error().Err(err).Msg("Failed to get job info")
 			return nil, err
 		}
 
 		if *job.Name == serviceName {
 			allocationInfo, _, err := s.nomadClient.Allocations().Info(allocation.ID, nil)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to get allocation info")
+				logger.Log.Error().Err(err).Msg("Failed to get allocation info")
 				return nil, err
 			}
 			err = s.nomadClient.Allocations().Restart(allocationInfo, "", nil)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to restart service allocations")
+				logger.Log.Error().Err(err).Msg("Failed to restart service allocations")
 				return nil, err
 			}
 		}
@@ -220,19 +214,19 @@ func (s *NomadService) processAllocation(allocation *api.AllocationListStub) {
 
 	allocationInfo, _, err := s.nomadClient.Allocations().Info(allocation.ID, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get allocation info")
+		logger.Log.Error().Err(err).Msg("Failed to get allocation info")
 		return
 	}
 
 	node, _, err := s.nomadClient.Nodes().Info(allocation.NodeID, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get node info")
+		logger.Log.Error().Err(err).Msg("Failed to get node info")
 		return
 	}
 
 	job, _, err := s.nomadClient.Jobs().Info(allocation.JobID, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get job info")
+		logger.Log.Error().Err(err).Msg("Failed to get job info")
 		return
 	}
 

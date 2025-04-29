@@ -9,9 +9,9 @@ RUN CGO_ENABLED=0 go build -o bin/molecule .
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=builder /go/src/github.com/DistroByte/molecule/bin/molecule /bin/molecule
+COPY --from=builder /go/src/github.com/DistroByte/molecule/bin/molecule /app/molecule
 COPY --from=builder /go/src/github.com/DistroByte/molecule/web /web
 
 WORKDIR /
 
-ENTRYPOINT ["/bin/molecule"]
+ENTRYPOINT ["/app/molecule"]

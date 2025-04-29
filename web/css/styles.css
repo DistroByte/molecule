@@ -49,12 +49,12 @@ li:hover {
 .collapsible {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease-out;
+    transition: max-height 0.2s ease-out;
 }
 
 .collapsible-header .caret {
     display: inline-block;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
     transform: rotate(90deg);
     user-select: none;
 }
@@ -86,7 +86,7 @@ li:hover {
     padding: 2px 6px;
     font-size: 12px;
     cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.2s ease, color 0.3s ease;
 }
 
 .restart-button:hover {

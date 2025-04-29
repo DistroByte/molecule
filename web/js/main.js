@@ -171,7 +171,7 @@ const generateListItemTemplate = (
         <a href="${value}" target="_blank" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           ${
             faviconUrl
-              ? `<img src="${faviconUrl}" alt="." style="width:auto; height:40px; margin-right:8px;">`
+              ? `<img src="${faviconUrl}" alt="&ZeroWidthSpace;" style="width:auto; height:40px; margin-right:10px;">`
               : ""
           }
           <span>${service}</span>

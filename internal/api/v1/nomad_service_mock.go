@@ -1,6 +1,8 @@
 package v1
 
-import "github.com/rs/zerolog/log"
+import (
+	"github.com/DistroByte/molecule/logger"
+)
 
 type MockNomadService struct{}
 
@@ -16,31 +18,31 @@ func NewMockNomadService() NomadServiceInterface {
 }
 
 func (m *MockNomadService) ExtractAll(print bool) (map[string]string, error) {
-	log.Debug().Msg("Mock: ExtractAll called")
+	logger.Log.Debug().Msg("Mock: ExtractAll called")
 	return urls, nil
 }
 
 func (m *MockNomadService) ExtractURLs() (map[string]string, error) {
-	log.Debug().Msg("Mock: ExtractURLs called")
+	logger.Log.Debug().Msg("Mock: ExtractURLs called")
 	return urls, nil
 }
 
 func (m *MockNomadService) ExtractHostPorts() (map[string]string, error) {
-	log.Debug().Msg("Mock: ExtractHostPorts called")
+	logger.Log.Debug().Msg("Mock: ExtractHostPorts called")
 	return urls, nil
 }
 
 func (m *MockNomadService) ExtractServicePorts() (map[string]string, error) {
-	log.Debug().Msg("Mock: ExtractServicePorts called")
+	logger.Log.Debug().Msg("Mock: ExtractServicePorts called")
 	return urls, nil
 }
 
 func (m *MockNomadService) GetServiceStatus(service string) (map[string]string, error) {
-	log.Debug().Msg("Mock: GetServiceStatus called")
+	logger.Log.Debug().Msg("Mock: GetServiceStatus called")
 	return urls, nil
 }
 
 func (m *MockNomadService) RestartServiceAllocations(service string) (map[string]string, error) {
-	log.Debug().Msg("Mock: RestartServiceAllocations called")
+	logger.Log.Debug().Msg("Mock: RestartServiceAllocations called")
 	return urls, nil
 }
