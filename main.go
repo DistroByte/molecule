@@ -59,7 +59,10 @@ func main() {
 	var nomadService v1.NomadServiceInterface
 
 	if os.Getenv("PROD") == "true" {
-		configFilePath := "./config.yaml"
+		configFilePath := os.Getenv("CONFIG_FILE")
+		if configFilePath == "" {
+			logger.Log.Fatal().Msg("CONFIG_FILE environment variable is required")
+		}
 		config, err := loadConfig(configFilePath)
 
 		if err != nil {
