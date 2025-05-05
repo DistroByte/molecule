@@ -3,7 +3,7 @@ module github.com/DistroByte/molecule
 go 1.23.6
 
 require (
-	github.com/getkin/kin-openapi v0.131.0
+	github.com/getkin/kin-openapi v0.132.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/nomad/api v0.0.0-20250317133216-16bbdd983307
