@@ -60,14 +60,18 @@ func main() {
 
 	if os.Getenv("PROD") == "true" {
 		configFilePath := os.Getenv("CONFIG_FILE")
-		if configFilePath == "" {
-			logger.Log.Fatal().Msg("CONFIG_FILE environment variable is required")
-		}
-		config, err := loadConfig(configFilePath)
+		var config Config
+		var err error
 
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to load config file")
-			return
+		if configFilePath == "" {
+			logger.Log.Fatal().Msg("CONFIG_FILE environment variable is not set - not loading config")
+		} else {
+			config, err = loadConfig(configFilePath)
+
+			if err != nil {
+				logger.Log.Error().Err(err).Msg("Failed to load config file")
+				return
+			}
 		}
 
 		logger.Log.Debug().Any("urls", config.StandardURLs).Msg("Loaded standard URLs from YAML")
