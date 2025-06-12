@@ -2,13 +2,13 @@ body {
     font-family: monospace, sans-serif;
     margin: 20px;
     padding: 0;
-    background-color: #f9f9f9;
-    color: #333;
+    background-color: rgb(255, 252, 240);
+    color: rgb(16, 15, 15);
 }
 
 h1,
 h2 {
-    color: #0056b3;
+    color: rgb(32, 94, 166);
     user-select: none;
     cursor: pointer;
 }
@@ -22,7 +22,7 @@ ul {
 }
 
 li {
-    background: #e9ecef;
+    background: rgb(242, 240, 229);
     margin: 0;
     padding: 10px;
     border-radius: 10px;
@@ -80,8 +80,8 @@ li:hover {
 
 .restart-button {
     background-color: transparent;
-    color: #333;
-    border: 1px solid #ccc;
+    color: rgb(111, 110, 105);
+    border: 1px solid rgb(230, 228, 217);
     border-radius: 3px;
     padding: 2px 6px;
     font-size: 12px;
@@ -90,14 +90,14 @@ li:hover {
 }
 
 .restart-button:hover {
-    background-color: #f44336;
-    color: white;
-    border-color: #f44336;
+    background-color: rgb(188, 82, 21);
+    color: rgb(255, 252, 240);
+    border-color: rgb(188, 82, 21);
 }
 
 .restart-button:active {
-    background-color: #d32f2f;
-    border-color: #d32f2f;
+    background-color: rgb(175, 48, 41);
+    border-color: rgb(175, 48, 41);
 }
 
 #auth-modal {
@@ -114,7 +114,7 @@ li:hover {
 }
 
 .auth-modal-content {
-    background: white;
+    background: rgb(255, 252, 240);
     padding: 20px;
     border-radius: 8px;
     width: 300px;
@@ -134,7 +134,8 @@ li:hover {
 .auth-input-container input {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid rgb(230, 228, 217);
+    background-color: rgb(242, 240, 229);
     border-radius: 4px;
     box-sizing: border-box;
 }
@@ -151,8 +152,8 @@ li:hover {
 }
 
 .auth-submit {
-    background-color: #4caf50;
-    color: white;
+    background-color: rgb(102, 128, 11);
+    color: rgb(255, 252, 240);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -161,8 +162,8 @@ li:hover {
 }
 
 .auth-cancel {
-    background-color: #f44336;
-    color: white;
+    background-color: rgb(175, 48, 41);
+    color: rgb(255, 252, 240);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
