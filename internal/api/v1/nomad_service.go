@@ -115,9 +115,9 @@ func (s *NomadService) ExtractURLs() ([]generated.GetUrls200ResponseInner, error
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	serviceUrls = append(makeUnique(serviceUrls), standardURLs...)
+	serviceUrls = append(serviceUrls, standardURLs...)
 
-	return serviceUrls, nil
+	return makeUnique(serviceUrls), nil
 }
 
 func (s *NomadService) ExtractHostPorts() ([]generated.GetUrls200ResponseInner, error) {
@@ -373,8 +373,10 @@ func makeUnique(urls []generated.GetUrls200ResponseInner) []generated.GetUrls200
 		result = append(result, url)
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Service < result[j].Service
+	// sort the result by service name alphabetically
+	slices.SortFunc(result, func(a, b generated.GetUrls200ResponseInner) int {
+		return strings.Compare(a.Service, b.Service)
 	})
+
 	return result
 }
