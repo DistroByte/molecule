@@ -85,11 +85,16 @@ func main() {
 			return
 		}
 
-		standardURLsMap := make(map[string]string)
+		// make an array of URLInfo from the standard URLs
+		var standardURLsSlice []generated.GetUrls200ResponseInner
 		for _, entry := range config.StandardURLs {
-			standardURLsMap[entry.Service] = entry.URL
+			standardURLsSlice = append(standardURLsSlice, generated.GetUrls200ResponseInner{
+				Service: entry.Service,
+				Url:     entry.URL,
+				Fetched: false,
+			})
 		}
-		nomadService = v1.NewNomadService(nomadClient, standardURLsMap)
+		nomadService = v1.NewNomadService(nomadClient, standardURLsSlice)
 		logger.Log.Trace().Msg("Running in production mode with Nomad service")
 
 	} else {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	generated "github.com/DistroByte/molecule/internal/generated/go"
 	"github.com/DistroByte/molecule/logger"
 	"github.com/hashicorp/nomad/api"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -20,39 +21,37 @@ type NomadService struct {
 }
 
 type NomadServiceInterface interface {
-	ExtractAll(print bool) (map[string]string, error)
-	ExtractURLs() (map[string]string, error)
-	ExtractHostPorts() (map[string]string, error)
-	ExtractServicePorts() (map[string]string, error)
+	ExtractAll(print bool) ([]generated.GetUrls200ResponseInner, error)
+	ExtractURLs() ([]generated.GetUrls200ResponseInner, error)
+	ExtractHostPorts() ([]generated.GetUrls200ResponseInner, error)
+	ExtractServicePorts() ([]generated.GetUrls200ResponseInner, error)
 	GetServiceStatus(service string) (map[string]string, error)
-	RestartServiceAllocations(service string) (map[string]string, error)
+	RestartServiceAllocations(service string) error
 }
 
 var (
-	standardURLs      = make(map[string]string)
-	serviceUrls       = make(map[string]string)
-	hostReservedPorts = make(map[string]string)
-	servicePorts      = make(map[string]string)
+	standardURLs      = []generated.GetUrls200ResponseInner{}
+	serviceUrls       = []generated.GetUrls200ResponseInner{}
+	hostReservedPorts = []generated.GetUrls200ResponseInner{}
+	servicePorts      = []generated.GetUrls200ResponseInner{}
 )
 
-func NewNomadService(nomadClient *api.Client, staticUrls map[string]string) NomadServiceInterface {
-	for key, value := range staticUrls {
-		standardURLs[key] = value
-	}
+func NewNomadService(nomadClient *api.Client, staticUrls []generated.GetUrls200ResponseInner) NomadServiceInterface {
+	standardURLs = staticUrls
 
 	return &NomadService{nomadClient: nomadClient}
 }
 
-func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
+func (s *NomadService) ExtractAll(print bool) ([]generated.GetUrls200ResponseInner, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
-	serviceUrls = make(map[string]string)
-	hostReservedPorts = make(map[string]string)
-	servicePorts = make(map[string]string)
+	serviceUrls = []generated.GetUrls200ResponseInner{}
+	hostReservedPorts = []generated.GetUrls200ResponseInner{}
+	servicePorts = []generated.GetUrls200ResponseInner{}
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
@@ -61,35 +60,53 @@ func (s *NomadService) ExtractAll(print bool) (map[string]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	allUrls := make(map[string]string)
-	for k, v := range serviceUrls {
-		allUrls[k] = v
+	allUrls := []generated.GetUrls200ResponseInner{}
+	for _, v := range serviceUrls {
+		allUrls = append(allUrls, generated.GetUrls200ResponseInner{
+			Service: v.Service,
+			Url:     v.Url,
+			Fetched: true,
+		})
 	}
-	for k, v := range hostReservedPorts {
-		allUrls[k] = v
+	for _, v := range hostReservedPorts {
+		allUrls = append(allUrls, generated.GetUrls200ResponseInner{
+			Service: v.Service,
+			Url:     v.Url,
+			Fetched: true,
+		})
 	}
-	for k, v := range servicePorts {
-		allUrls[k] = v
+	for _, v := range servicePorts {
+		allUrls = append(allUrls, generated.GetUrls200ResponseInner{
+			Service: v.Service,
+			Url:     v.Url,
+			Fetched: true,
+		})
 	}
-	for k, v := range standardURLs {
-		allUrls[k] = v
+	if len(standardURLs) > 0 {
+		for _, url := range standardURLs {
+			allUrls = append(allUrls, generated.GetUrls200ResponseInner{
+				Service: url.Service,
+				Url:     url.Url,
+				Fetched: false,
+			})
+		}
 	}
 
 	if print {
 		prettyPrint()
 	}
 
-	return allUrls, nil
+	return makeUnique(allUrls), nil
 }
 
-func (s *NomadService) ExtractURLs() (map[string]string, error) {
+func (s *NomadService) ExtractURLs() ([]generated.GetUrls200ResponseInner, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
-	serviceUrls = make(map[string]string)
+	serviceUrls = []generated.GetUrls200ResponseInner{}
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
@@ -98,21 +115,19 @@ func (s *NomadService) ExtractURLs() (map[string]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for k, v := range standardURLs {
-		serviceUrls[k] = v
-	}
+	serviceUrls = append(makeUnique(serviceUrls), standardURLs...)
 
 	return serviceUrls, nil
 }
 
-func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
+func (s *NomadService) ExtractHostPorts() ([]generated.GetUrls200ResponseInner, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
-	hostReservedPorts = make(map[string]string)
+	hostReservedPorts = []generated.GetUrls200ResponseInner{}
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
@@ -121,17 +136,17 @@ func (s *NomadService) ExtractHostPorts() (map[string]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return hostReservedPorts, nil
+	return makeUnique(hostReservedPorts), nil
 }
 
-func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
+func (s *NomadService) ExtractServicePorts() ([]generated.GetUrls200ResponseInner, error) {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to list allocations")
 		return nil, err
 	}
 
-	servicePorts = make(map[string]string)
+	servicePorts = []generated.GetUrls200ResponseInner{}
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
@@ -140,7 +155,7 @@ func (s *NomadService) ExtractServicePorts() (map[string]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return servicePorts, nil
+	return makeUnique(servicePorts), nil
 }
 
 func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, error) {
@@ -150,9 +165,9 @@ func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, 
 		return nil, err
 	}
 
-	serviceUrls = make(map[string]string)
-	hostReservedPorts = make(map[string]string)
-	servicePorts = make(map[string]string)
+	serviceUrls = []generated.GetUrls200ResponseInner{}
+	hostReservedPorts = []generated.GetUrls200ResponseInner{}
+	servicePorts = []generated.GetUrls200ResponseInner{}
 
 	for _, allocation := range allocations {
 		s.processAllocation(allocation)
@@ -161,16 +176,20 @@ func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if val, ok := serviceUrls[serviceName]; ok {
-		return map[string]string{serviceName: val}, nil
+	for _, url := range serviceUrls {
+		if url.Service == serviceName {
+			return map[string]string{serviceName: url.Url}, nil
+		}
 	}
-
-	if val, ok := hostReservedPorts[serviceName]; ok {
-		return map[string]string{serviceName: val}, nil
+	for _, port := range hostReservedPorts {
+		if port.Service == serviceName {
+			return map[string]string{serviceName: port.Url}, nil
+		}
 	}
-
-	if val, ok := servicePorts[serviceName]; ok {
-		return map[string]string{serviceName: val}, nil
+	for _, port := range servicePorts {
+		if port.Service == serviceName {
+			return map[string]string{serviceName: port.Url}, nil
+		}
 	}
 
 	return nil, nil
@@ -178,35 +197,35 @@ func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, 
 
 // when called, this function will restart all allocations for a specific service
 // this is useful when a new version of a service is built and you want to restart all instances
-func (s *NomadService) RestartServiceAllocations(serviceName string) (map[string]string, error) {
+func (s *NomadService) RestartServiceAllocations(serviceName string) error {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to list allocations")
-		return nil, err
+		return err
 	}
 
 	for _, allocation := range allocations {
 		job, _, err := s.nomadClient.Jobs().Info(allocation.JobID, nil)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to get job info")
-			return nil, err
+			return err
 		}
 
 		if *job.Name == serviceName {
 			allocationInfo, _, err := s.nomadClient.Allocations().Info(allocation.ID, nil)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to get allocation info")
-				return nil, err
+				return err
 			}
 			err = s.nomadClient.Allocations().Restart(allocationInfo, "", nil)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to restart service allocations")
-				return nil, err
+				return err
 			}
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (s *NomadService) processAllocation(allocation *api.AllocationListStub) {
@@ -260,7 +279,11 @@ func (s *NomadService) processTaskGroup(taskGroup *api.TaskGroup, allocation *ap
 			if port.To != 0 {
 				for _, allocPort := range allocation.Resources.Networks[0].DynamicPorts {
 					if allocPort.Label == port.Label {
-						servicePorts[*job.Name+"-"+port.Label] = fmt.Sprintf("%s:%d", node.HTTPAddr[:len(node.HTTPAddr)-5], allocPort.Value)
+						servicePorts = append(servicePorts, generated.GetUrls200ResponseInner{
+							Service: *job.Name + "-" + port.Label,
+							Url:     fmt.Sprintf("%s:%d", node.HTTPAddr[:len(node.HTTPAddr)-5], allocPort.Value),
+							Fetched: true,
+						})
 						break
 					}
 				}
@@ -270,7 +293,11 @@ func (s *NomadService) processTaskGroup(taskGroup *api.TaskGroup, allocation *ap
 
 	if len(taskGroup.Networks[0].ReservedPorts) != 0 {
 		for _, port := range taskGroup.Networks[0].ReservedPorts {
-			hostReservedPorts[*job.Name+"-"+port.Label] = fmt.Sprintf("%s:%d", node.HTTPAddr[:len(node.HTTPAddr)-5], port.Value)
+			hostReservedPorts = append(hostReservedPorts, generated.GetUrls200ResponseInner{
+				Service: *job.Name + "-" + port.Label,
+				Url:     fmt.Sprintf("%s:%d", node.HTTPAddr[:len(node.HTTPAddr)-5], port.Value),
+				Fetched: true,
+			})
 		}
 	}
 }
@@ -288,10 +315,20 @@ func (s *NomadService) getTraefikURL(jobName string, taskName string, tags []str
 				defer s.mu.Unlock()
 
 				if jobName == taskName {
-					serviceUrls[jobName] = "https://" + url
+					serviceUrls = append(serviceUrls, generated.GetUrls200ResponseInner{
+						Service: jobName,
+						Url:     "https://" + url,
+						Fetched: true,
+					})
+
 					return
 				} else {
-					serviceUrls[jobName+"-"+taskName] = "https://" + url
+					serviceUrls = append(serviceUrls, generated.GetUrls200ResponseInner{
+						Service: jobName + "-" + taskName,
+						Url:     "https://" + url,
+						Fetched: true,
+					})
+
 					return
 				}
 			}
@@ -305,10 +342,10 @@ func prettyPrint() {
 	printTable("Service Ports", "Port", servicePorts)
 }
 
-func printTable(header1, header2 string, data map[string]string) {
+func printTable(header1, header2 string, data []generated.GetUrls200ResponseInner) {
 	keys := make([]string, 0, len(data))
-	for k := range data {
-		keys = append(keys, k)
+	for _, k := range data {
+		keys = append(keys, k.Service)
 	}
 	sort.Strings(keys)
 
@@ -316,9 +353,28 @@ func printTable(header1, header2 string, data map[string]string) {
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{header1, header2})
 
-	for _, key := range keys {
-		t.AppendRow([]interface{}{key, data[key]})
+	for key := range keys {
+		t.AppendRow([]interface{}{key, data[key].Url})
 	}
 
 	t.Render()
+}
+
+func makeUnique(urls []generated.GetUrls200ResponseInner) []generated.GetUrls200ResponseInner {
+	uniqueUrls := make(map[string]generated.GetUrls200ResponseInner)
+	for _, url := range urls {
+		if _, exists := uniqueUrls[url.Service]; !exists {
+			uniqueUrls[url.Service] = url
+		}
+	}
+
+	result := make([]generated.GetUrls200ResponseInner, 0, len(uniqueUrls))
+	for _, url := range uniqueUrls {
+		result = append(result, url)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Service < result[j].Service
+	})
+	return result
 }

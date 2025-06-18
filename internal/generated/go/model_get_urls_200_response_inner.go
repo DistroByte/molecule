@@ -20,6 +20,9 @@ type GetUrls200ResponseInner struct {
 
 	// The URL.
 	Url string `json:"url"`
+
+	// Indicates if the URL has been fetched from nomad or loaded from the config file.
+	Fetched bool `json:"fetched"`
 }
 
 // AssertGetUrls200ResponseInnerRequired checks if the required fields are not zero-ed
@@ -27,6 +30,7 @@ func AssertGetUrls200ResponseInnerRequired(obj GetUrls200ResponseInner) error {
 	elements := map[string]interface{}{
 		"service": obj.Service,
 		"url": obj.Url,
+		"fetched": obj.Fetched,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

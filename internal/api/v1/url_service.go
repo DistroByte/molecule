@@ -58,7 +58,7 @@ func (s *MoleculeAPIService) GetServiceStatus(ctx context.Context, service strin
 }
 
 func (s *MoleculeAPIService) RestartServiceAllocations(ctx context.Context, service string) (openapi.ImplResponse, error) {
-	_, err := s.nomadService.RestartServiceAllocations(service)
+	err := s.nomadService.RestartServiceAllocations(service)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, err.Error()), nil
 	}

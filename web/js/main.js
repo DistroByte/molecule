@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Function to fetch data and populate the list
 const fetchData = async (endpoint, listElement, includeFavicon = false) => {
   try {
-    console.log(
+    console.info(
       `Fetching data from ${endpoint
         .replace("/v1/urls/", "")
         .replace("/", "")}...`
@@ -35,9 +35,15 @@ const fetchData = async (endpoint, listElement, includeFavicon = false) => {
       throw new Error(`Error fetching ${endpoint}: ${response.statusText}`);
 
     const data = await response.json();
+    console.debug(`Data fetched from ${endpoint}:`, data);
     listElement.innerHTML = await generateListItems(data, includeFavicon);
 
-    setupCopyableItems(listElement);
+    try {
+      setupCopyableItems(listElement);
+    } catch (error) {
+      console.error("Error setting up copyable items:", error);
+      listElement.innerHTML = `<li>Error setting up copyable items</li>`;
+    }
   } catch (error) {
     console.error(error);
     listElement.innerHTML = `<li>Error loading data</li>`;
@@ -47,21 +53,27 @@ const fetchData = async (endpoint, listElement, includeFavicon = false) => {
 // Generate list items based on data
 const generateListItems = async (data, includeFavicon) => {
   const items = await Promise.all(
-    Object.entries(data).map(async ([service, value]) => {
-      if (includeFavicon && value.startsWith("http")) {
-        const faviconUrl = fetchFavicon(service);
-        service = service.includes("-")
-          ? service.slice(0, service.lastIndexOf("-"))
-          : service;
+    data.map(async (entry) => {
+      if (includeFavicon && entry.url.startsWith("http")) {
+        const faviconUrl = fetchFavicon(entry.service);
+        entry.service = entry.service.includes("-")
+          ? entry.service.slice(0, entry.service.lastIndexOf("-"))
+          : entry.service;
         return generateListItemTemplate(
-          service,
-          value,
+          entry.service,
+          entry.url,
+          entry.fetched,
           includeFavicon,
           faviconUrl
         );
       }
 
-      return generateListItemTemplate(service, value, includeFavicon);
+      return generateListItemTemplate(
+        entry.service,
+        entry.url,
+        entry.fetched,
+        includeFavicon
+      );
     })
   );
 
@@ -161,14 +173,16 @@ const fetchFavicon = (service, format = "png") => {
 // Generate HTML for a single list item
 const generateListItemTemplate = (
   service,
-  value,
+  url,
+  fetched,
   includeFavicon,
   faviconUrl = null
 ) => {
-  if (includeFavicon && value.startsWith("http")) {
-    return `
+  try {
+    if (includeFavicon && url.startsWith("http")) {
+      return `
       <li>
-        <a href="${value}" target="_blank" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+        <a href="${url}" target="_blank" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           ${
             faviconUrl
               ? `<img src="${faviconUrl}" alt="&ZeroWidthSpace;" style="width:auto; height:40px; margin-right:10px;">`
@@ -176,15 +190,23 @@ const generateListItemTemplate = (
           }
           <span>${service}</span>
         </a>
-        <button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>
+        ${
+          fetched
+            ? `<button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>`
+            : ""
+        }
       </li>`;
-  }
+    }
 
-  return `
-    <li class="copyable" data-value="${value}">
-      ${service}: ${value}
+    return `
+    <li class="copyable" data-value="${url}">
+      ${service}: ${url}
       <button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>
     </li>`;
+  } catch (error) {
+    console.error(`Error generating list item for ${service}:`, error);
+    return `<li>Error generating item for ${service}</li>`;
+  }
 };
 
 document.addEventListener("click", (event) => {

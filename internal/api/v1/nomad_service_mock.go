@@ -1,48 +1,64 @@
 package v1
 
 import (
+	generated "github.com/DistroByte/molecule/internal/generated/go"
 	"github.com/DistroByte/molecule/logger"
 )
 
 type MockNomadService struct{}
 
-var urls = map[string]string{
-	"nomad":     "http://zeus.internal:4646",
-	"consul":    "http://zeus.internal:8500",
-	"traefik":   "http://hermes.internal:8081",
-	"plausible": "https://plausible.dbyte.xyz",
+var urls = []generated.GetUrls200ResponseInner{
+	{
+		Service: "nomad",
+		Url:     "http://zeus.internal:4646",
+	},
+	{
+		Service: "consul",
+		Url:     "http://zeus.internal:8500",
+	},
+	{
+		Service: "traefik",
+		Url:     "http://hermes.internal:8081",
+	},
 }
 
 func NewMockNomadService() NomadServiceInterface {
 	return &MockNomadService{}
 }
 
-func (m *MockNomadService) ExtractAll(print bool) (map[string]string, error) {
+func (m *MockNomadService) ExtractAll(print bool) ([]generated.GetUrls200ResponseInner, error) {
 	logger.Log.Debug().Msg("Mock: ExtractAll called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractURLs() (map[string]string, error) {
+func (m *MockNomadService) ExtractURLs() ([]generated.GetUrls200ResponseInner, error) {
 	logger.Log.Debug().Msg("Mock: ExtractURLs called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractHostPorts() (map[string]string, error) {
+func (m *MockNomadService) ExtractHostPorts() ([]generated.GetUrls200ResponseInner, error) {
 	logger.Log.Debug().Msg("Mock: ExtractHostPorts called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractServicePorts() (map[string]string, error) {
+func (m *MockNomadService) ExtractServicePorts() ([]generated.GetUrls200ResponseInner, error) {
 	logger.Log.Debug().Msg("Mock: ExtractServicePorts called")
 	return urls, nil
 }
 
 func (m *MockNomadService) GetServiceStatus(service string) (map[string]string, error) {
 	logger.Log.Debug().Msg("Mock: GetServiceStatus called")
-	return urls, nil
+	urlMap := make(map[string]string)
+	for _, url := range urls {
+		if url.Service == service {
+			urlMap[url.Service] = url.Url
+		}
+	}
+
+	return urlMap, nil
 }
 
-func (m *MockNomadService) RestartServiceAllocations(service string) (map[string]string, error) {
+func (m *MockNomadService) RestartServiceAllocations(service string) error {
 	logger.Log.Debug().Msg("Mock: RestartServiceAllocations called")
-	return urls, nil
+	return nil
 }

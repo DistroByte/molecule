@@ -45,14 +45,14 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                  $ref: "#/components/schemas/getURLs_200_response_inner"
                 type: array
           description: successful operation
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
       summary: Get URLs
   /v1/urls/services:
@@ -64,14 +64,14 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                  $ref: "#/components/schemas/getURLs_200_response_inner"
                 type: array
           description: successful operation
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
       summary: Get service host and ports
   /v1/urls/hosts:
@@ -83,14 +83,14 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                  $ref: "#/components/schemas/getURLs_200_response_inner"
                 type: array
           description: successful operation
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
       summary: Get host reserverd URLs
   /v1/urls/traefik:
@@ -102,14 +102,14 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/getURLs_200_response_inner'
+                  $ref: "#/components/schemas/getURLs_200_response_inner"
                 type: array
           description: successful operation
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
       summary: Get Traefik proxied URLs
   /v1/services/{service}:
@@ -139,7 +139,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
       summary: Get the status of a service
     parameters:
@@ -183,19 +183,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: OK
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Invalid request
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getURLs_400_response'
+                $ref: "#/components/schemas/getURLs_400_response"
           description: Internal server error
       summary: Restart all allocations of a service
 components:
@@ -204,6 +204,7 @@ components:
       example:
         service: service
         url: url
+        fetched: true
       properties:
         service:
           description: The service that the URL belongs to.
@@ -211,7 +212,12 @@ components:
         url:
           description: The URL.
           type: string
+        fetched:
+          description: Indicates if the URL has been fetched from nomad or loaded
+            from the config file.
+          type: boolean
       required:
+      - fetched
       - service
       - url
     getURLs_400_response:

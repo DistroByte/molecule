@@ -51,42 +51,99 @@ func NewDefaultAPIController(s DefaultAPIServicer, opts ...DefaultAPIOption) *De
 func (c *DefaultAPIController) Routes() Routes {
 	return Routes{
 		"Healthcheck": Route{
+			"Healthcheck",
 			strings.ToUpper("Get"),
 			"/health",
 			c.Healthcheck,
 		},
 		"GetURLs": Route{
+			"GetURLs",
 			strings.ToUpper("Get"),
 			"/v1/urls",
 			c.GetURLs,
 		},
 		"GetServiceURLs": Route{
+			"GetServiceURLs",
 			strings.ToUpper("Get"),
 			"/v1/urls/services",
 			c.GetServiceURLs,
 		},
 		"GetHostURLs": Route{
+			"GetHostURLs",
 			strings.ToUpper("Get"),
 			"/v1/urls/hosts",
 			c.GetHostURLs,
 		},
 		"GetTraefikURLs": Route{
+			"GetTraefikURLs",
 			strings.ToUpper("Get"),
 			"/v1/urls/traefik",
 			c.GetTraefikURLs,
 		},
 		"GetServiceStatus": Route{
+			"GetServiceStatus",
 			strings.ToUpper("Get"),
 			"/v1/services/{service}",
 			c.GetServiceStatus,
 		},
 		"RestartServiceAllocations": Route{
+			"RestartServiceAllocations",
 			strings.ToUpper("Post"),
 			"/v1/services/{service}/alloc-restart",
 			c.RestartServiceAllocations,
 		},
 	}
 }
+
+// OrderedRoutes returns all the api routes in a deterministic order for the DefaultAPIController
+func (c *DefaultAPIController) OrderedRoutes() []Route {
+	return []Route{
+		Route{
+			"Healthcheck",
+			strings.ToUpper("Get"),
+			"/health",
+			c.Healthcheck,
+		},
+		Route{
+			"GetURLs",
+			strings.ToUpper("Get"),
+			"/v1/urls",
+			c.GetURLs,
+		},
+		Route{
+			"GetServiceURLs",
+			strings.ToUpper("Get"),
+			"/v1/urls/services",
+			c.GetServiceURLs,
+		},
+		Route{
+			"GetHostURLs",
+			strings.ToUpper("Get"),
+			"/v1/urls/hosts",
+			c.GetHostURLs,
+		},
+		Route{
+			"GetTraefikURLs",
+			strings.ToUpper("Get"),
+			"/v1/urls/traefik",
+			c.GetTraefikURLs,
+		},
+		Route{
+			"GetServiceStatus",
+			strings.ToUpper("Get"),
+			"/v1/services/{service}",
+			c.GetServiceStatus,
+		},
+		Route{
+			"RestartServiceAllocations",
+			strings.ToUpper("Post"),
+			"/v1/services/{service}/alloc-restart",
+			c.RestartServiceAllocations,
+		},
+	}
+}
+
+
 
 // Healthcheck - Healthcheck endpoint
 func (c *DefaultAPIController) Healthcheck(w http.ResponseWriter, r *http.Request) {
