@@ -33,8 +33,8 @@ type Config struct {
 	} `yaml:"standard_urls"`
 
 	ServerConfig struct {
-		Port int    `yaml:"port" default:"8080"`
-		Host string `yaml:"host" default:""`
+		Port int    `yaml:"port"`
+		Host string `yaml:"host"`
 	} `yaml:"server_config"`
 }
 
@@ -244,6 +244,10 @@ func loadConfig(filePath string) (Config, error) {
 	decoder := yaml.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
 		return Config{}, fmt.Errorf("failed to decode YAML file: %w", err)
+	}
+
+	if config.ServerConfig.Port == 0 {
+		config.ServerConfig.Port = 8080 // Default port if not specified
 	}
 
 	return config, nil
