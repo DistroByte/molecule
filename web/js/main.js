@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Function to fetch data and populate the list
-const fetchData = async (endpoint, listElement, includeFavicon = false) => {
+async function fetchData(endpoint, listElement, includeFavicon = false) {
   try {
     console.info(
       `Fetching data from ${endpoint
@@ -44,14 +44,17 @@ const fetchData = async (endpoint, listElement, includeFavicon = false) => {
       console.error("Error setting up copyable items:", error);
       listElement.innerHTML = `<li>Error setting up copyable items</li>`;
     }
+
+    return response;
   } catch (error) {
     console.error(error);
     listElement.innerHTML = `<li>Error loading data</li>`;
+    return null;
   }
-};
+}
 
 // Generate list items based on data
-const generateListItems = async (data, includeFavicon) => {
+async function generateListItems(data, includeFavicon) {
   const items = await Promise.all(
     data.map(async (entry) => {
       if (includeFavicon && entry.url.startsWith("http")) {
@@ -78,10 +81,10 @@ const generateListItems = async (data, includeFavicon) => {
   );
 
   return items.join("");
-};
+}
 
 // Set up copy functionality for non-URL items
-const setupCopyableItems = (listElement) => {
+function setupCopyableItems(listElement) {
   const copyableItems = listElement.querySelectorAll(".copyable");
   copyableItems.forEach((item) => {
     item.addEventListener("click", () => {
@@ -97,10 +100,10 @@ const setupCopyableItems = (listElement) => {
         });
     });
   });
-};
+}
 
 // Show a notification when a string is copied
-const showCopyNotification = (message, isError = false) => {
+function showCopyNotification(message, isError = false) {
   const notification = document.createElement("div");
   notification.textContent = message;
   notification.style.position = "fixed";
@@ -120,10 +123,10 @@ const showCopyNotification = (message, isError = false) => {
   setTimeout(() => {
     notification.remove();
   }, 3000);
-};
+}
 
 // Set up collapsible headers
-const setupCollapsibleHeaders = () => {
+function setupCollapsibleHeaders() {
   const collapsibleHeaders = document.querySelectorAll(".collapsible-header");
   collapsibleHeaders.forEach((header) => {
     header.addEventListener("click", () => {
@@ -140,25 +143,31 @@ const setupCollapsibleHeaders = () => {
       }
     });
   });
-};
+}
 
 // Set up refresh button functionality
-const setupRefreshButton = (
+function setupRefreshButton(
   buttonId,
   endpoint,
   listElement,
   includeFavicon = false
-) => {
+) {
   const button = document.getElementById(buttonId);
   if (button) {
     button.addEventListener("click", () =>
-      fetchData(endpoint, listElement, includeFavicon)
+      fetchData(endpoint, listElement, includeFavicon).then(() =>
+        showCopyNotification(
+          `Refreshed ${endpoint
+            .replace("/v1/urls/", "")
+            .replace("/", "")} list!`
+        )
+      )
     );
   }
-};
+}
 
 // Generate favicon URL
-const fetchFavicon = (service, format = "png") => {
+function fetchFavicon(service, format = "png") {
   try {
     service = service.includes("-")
       ? service.slice(0, service.lastIndexOf("-"))
@@ -168,16 +177,16 @@ const fetchFavicon = (service, format = "png") => {
     console.error(`Error generating favicon URL for ${service}:`, error);
     return null;
   }
-};
+}
 
 // Generate HTML for a single list item
-const generateListItemTemplate = (
+function generateListItemTemplate(
   service,
   url,
   fetched,
   includeFavicon,
   faviconUrl = null
-) => {
+) {
   try {
     if (includeFavicon && url.startsWith("http")) {
       return `
@@ -207,7 +216,7 @@ const generateListItemTemplate = (
     console.error(`Error generating list item for ${service}:`, error);
     return `<li>Error generating item for ${service}</li>`;
   }
-};
+}
 
 document.addEventListener("click", (event) => {
   if (event.target.classList.contains("restart-button")) {
@@ -216,7 +225,7 @@ document.addEventListener("click", (event) => {
   }
 });
 
-const restartService = (service) => {
+function restartService(service) {
   console.log(`Restarting service: ${service}`);
 
   // Show the authentication modal
@@ -231,6 +240,7 @@ const restartService = (service) => {
     event.preventDefault();
 
     const apiKey = document.getElementById("auth-apikey").value;
+    document.getElementById("auth-apikey").value = ""; // Clear the input field
 
     if (!apiKey) {
       alert("An API key is required to restart the service.");
@@ -272,10 +282,10 @@ const restartService = (service) => {
 
   authForm.addEventListener("submit", handleAuthSubmit);
   authCancel.addEventListener("click", handleAuthCancel);
-};
+}
 
 // Function to show a restart notification
-const showRestartNotification = (message, isError = false) => {
+function showRestartNotification(message, isError = false) {
   const notification = document.createElement("div");
   notification.textContent = message;
   notification.style.position = "fixed";
@@ -295,7 +305,7 @@ const showRestartNotification = (message, isError = false) => {
   setTimeout(() => {
     notification.remove();
   }, 3000);
-};
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const showApiKeyButton = document.getElementById("show-apikey");

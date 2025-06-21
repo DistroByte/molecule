@@ -31,7 +31,14 @@ type Config struct {
 		Service string `yaml:"service"`
 		URL     string `yaml:"url"`
 	} `yaml:"standard_urls"`
+
+	ServerConfig struct {
+		Port int    `yaml:"port" default:"8080"`
+		Host string `yaml:"host" default:""`
+	} `yaml:"server_config"`
 }
+
+var config Config
 
 func main() {
 
@@ -60,7 +67,6 @@ func main() {
 
 	if os.Getenv("PROD") == "true" {
 		configFilePath := os.Getenv("CONFIG_FILE")
-		var config Config
 		var err error
 
 		if configFilePath == "" {
@@ -157,8 +163,16 @@ func main() {
 	}
 	r.Mount("/", apiRouter)
 
-	logger.Log.Info().Msgf("Starting server on :8080")
-	logger.Log.Fatal().Err(http.ListenAndServe(":8080", r))
+	// if no host specified, use "localhost" in the log message
+	var loggerHost string
+	if config.ServerConfig.Host == "" {
+		loggerHost = "localhost"
+	} else {
+		loggerHost = config.ServerConfig.Host
+	}
+
+	logger.Log.Info().Msgf("Starting server on http://%s:%d", loggerHost, config.ServerConfig.Port)
+	logger.Log.Fatal().Err(http.ListenAndServe(fmt.Sprintf("%s:%d", config.ServerConfig.Host, config.ServerConfig.Port), r)).Msg("Server failed to start")
 }
 
 func requestIDMiddleware(next http.Handler) http.Handler {

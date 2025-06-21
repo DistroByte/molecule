@@ -7,8 +7,6 @@ standard_urls:
     url: "http://hermes.internal:8081"
   - service: "synology-dsm"
     url: "https://dionysus.internal:5001"
-  - service: "plausible"
-    url: "https://plausible.dbyte.xyz"
   - service: "photos"
     url: "https://photos.dbyte.xyz"
   - service: "drive"
@@ -22,3 +20,7 @@ nomad:
   address: "http://zeus.internal:4646"
 
 apikey: blahblah
+
+server_config:
+  host: "" # Leave empty for all interfaces
+  port: 8080

@@ -1,3 +1,8 @@
+:root {
+    --heading-weight: 500;
+    --input-width: 20em;
+}
+
 body {
     font-family: monospace, sans-serif;
     margin: 20px;
@@ -8,9 +13,25 @@ body {
 
 h1,
 h2 {
-    color: rgb(32, 94, 166);
+    color: rgb(16, 15, 15);
     user-select: none;
     cursor: pointer;
+    font-weight: var(--heading-weight);
+}
+
+h1 {
+    font-size: calc(1.35em + 0.55vw);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25em;
+    line-height: 1.25;
+    margin-top: 1.5em;
+}
+
+h2 {
+    font-size: calc(1em + 0.2vw);
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
 }
 
 ul {
@@ -132,7 +153,7 @@ li:hover {
 }
 
 .auth-input-container input {
-    width: 100%;
+    width: var(--input-width);
     padding: 8px;
     border: 1px solid rgb(230, 228, 217);
     background-color: rgb(242, 240, 229);
@@ -142,7 +163,7 @@ li:hover {
 
 .auth-input-container button {
     position: absolute;
-    right: 10px;
+    right: 0px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -170,4 +191,48 @@ li:hover {
     cursor: pointer;
     margin-left: 10px;
     margin-top: 10px;
+}
+
+button {
+    background-color: rgb(242, 240, 229);
+    color: rgb(16, 15, 15);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: monospace, sans-serif;
+    transition: background-color 0.2s ease, color 0.3s ease;
+}
+
+button:hover {
+    background-color: rgb(36, 131, 123);
+    color: rgb(255, 252, 240);
+}
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+    color: rgb(111, 110, 105);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-content p a {
+    text-decoration: none;
+    color: rgb(16, 15, 15);
+    text-decoration: underline;
+    margin: 0 5px;
+}
+
+p a:not([href^="#"]):not([href^="/"]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='gray' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25' /%3E%3C/svg%3E%0A");
+    background-position: right 33%;
+    background-repeat: no-repeat;
+    background-size: 0.7em;
+    padding-right: 0.75em;
 }
