@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/goccy/go-yaml"
 	"github.com/google/uuid"
 	"github.com/hashicorp/nomad/api"
 	"github.com/rs/zerolog"
-	"gopkg.in/yaml.v3"
 
 	v1 "github.com/DistroByte/molecule/internal/api/v1"
 	generated "github.com/DistroByte/molecule/internal/generated/go"
@@ -33,35 +33,17 @@ type Config struct {
 	} `yaml:"standard_urls"`
 
 	ServerConfig struct {
-		Port int    `yaml:"port"`
 		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
 	} `yaml:"server_config"`
 }
 
 var config Config
 
 func main() {
+	logger.InitLogger()
 
-	switch os.Getenv("LEVEL") {
-	case "trace":
-		logger.InitLogger(zerolog.TraceLevel)
-	case "debug":
-		logger.InitLogger(zerolog.DebugLevel)
-	case "info":
-		logger.InitLogger(zerolog.InfoLevel)
-	case "warn":
-		logger.InitLogger(zerolog.WarnLevel)
-	case "error":
-		logger.InitLogger(zerolog.ErrorLevel)
-	case "fatal":
-		logger.InitLogger(zerolog.FatalLevel)
-	case "panic":
-		logger.InitLogger(zerolog.PanicLevel)
-	default:
-		logger.InitLogger(zerolog.InfoLevel)
-	}
-
-	logger.Log.Info().Msg("Logger initialized")
+	logger.Log.Info().Msg("logger initialized")
 
 	var nomadService v1.NomadServiceInterface
 
@@ -75,19 +57,18 @@ func main() {
 			config, err = loadConfig(configFilePath)
 
 			if err != nil {
-				logger.Log.Error().Err(err).Msg("Failed to load config file")
+				logger.Log.Error().Err(err).Msg("failed to load config file")
 				return
 			}
 		}
 
-		logger.Log.Debug().Any("urls", config.StandardURLs).Msg("Loaded standard URLs from YAML")
 		if len(config.StandardURLs) == 0 {
-			logger.Log.Warn().Msg("No standard URLs found in YAML file")
+			logger.Log.Warn().Msg("no standard URLs found in YAML file")
 		}
 
 		nomadClient, err := api.NewClient(&api.Config{Address: config.Nomad.Address})
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to create api client")
+			logger.Log.Error().Err(err).Msg("failed to create api client")
 			return
 		}
 
@@ -101,11 +82,8 @@ func main() {
 			})
 		}
 		nomadService = v1.NewNomadService(nomadClient, standardURLsSlice)
-		logger.Log.Trace().Msg("Running in production mode with Nomad service")
-
 	} else {
 		nomadService = v1.NewMockNomadService()
-		logger.Log.Trace().Msg("Running in local mode with mock Nomad service")
 	}
 
 	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
@@ -136,19 +114,19 @@ func main() {
 		specPath := "./apispec/spec/index.yaml"
 		yamlData, err := os.ReadFile(specPath)
 		if err != nil {
-			http.Error(w, "Failed to read OpenAPI spec", http.StatusInternalServerError)
+			http.Error(w, "failed to read OpenAPI spec", http.StatusInternalServerError)
 			return
 		}
 
 		var jsonData map[string]interface{}
 		if err := yaml.Unmarshal(yamlData, &jsonData); err != nil {
-			http.Error(w, "Failed to parse OpenAPI spec", http.StatusInternalServerError)
+			http.Error(w, "failed to parse OpenAPI spec", http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(jsonData); err != nil {
-			http.Error(w, "Failed to encode OpenAPI spec as JSON", http.StatusInternalServerError)
+			http.Error(w, "failed to encode OpenAPI spec as JSON", http.StatusInternalServerError)
 		}
 	})
 
@@ -171,7 +149,7 @@ func main() {
 		loggerHost = config.ServerConfig.Host
 	}
 
-	logger.Log.Info().Msgf("Starting server on http://%s:%d", loggerHost, config.ServerConfig.Port)
+	logger.Log.Info().Msgf("starting server on http://%s:%d", loggerHost, config.ServerConfig.Port)
 	logger.Log.Fatal().Err(http.ListenAndServe(fmt.Sprintf("%s:%d", config.ServerConfig.Host, config.ServerConfig.Port), r)).Msg("Server failed to start")
 }
 
@@ -219,14 +197,14 @@ func apiKeyAuthHandler(key string) func(http.Handler) http.Handler {
 }
 
 func requiresAuth(pattern string) bool {
-	logger.Log.Debug().Msgf("Checking if route %s requires authentication", pattern)
+	logger.Log.Debug().Msgf("checking if route %s requires authentication", pattern)
 	authenticatedRoutes := []string{
 		"/v1/services/{service}/alloc-restart",
 	}
 
 	for _, route := range authenticatedRoutes {
 		if route == pattern {
-			logger.Log.Debug().Msgf("Route %s requires authentication", pattern)
+			logger.Log.Debug().Msgf("route %s requires authentication", pattern)
 			return true
 		}
 	}
@@ -241,14 +219,17 @@ func loadConfig(filePath string) (Config, error) {
 	defer file.Close()
 
 	var config Config
-	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&config); err != nil {
+	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
 		return Config{}, fmt.Errorf("failed to decode YAML file: %w", err)
 	}
 
+	// Set default values for server config if not provided
 	if config.ServerConfig.Port == 0 {
-		config.ServerConfig.Port = 8080 // Default port if not specified
+		logger.Log.Warn().Msg("no port specified in server config, using default port 8080")
+		config.ServerConfig.Port = 8080
 	}
+
+	logger.Log.Debug().Any("config", config).Msg("config loaded")
 
 	return config, nil
 }

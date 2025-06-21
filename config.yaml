@@ -22,5 +22,5 @@ nomad:
 apikey: blahblah
 
 server_config:
-  host: "" # Leave empty for all interfaces
+  host: ""
   port: 8080
