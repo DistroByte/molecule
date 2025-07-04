@@ -21,6 +21,55 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 });
 
+function calculateSettingAsThemeString({
+  localStorageTheme,
+  systemSettingDark,
+}) {
+  if (localStorageTheme !== null) {
+    return localStorageTheme;
+  }
+
+  if (systemSettingDark.matches) {
+    return "dark";
+  }
+
+  return "light";
+}
+
+function updateButton({ buttonEl, isDark }) {
+  const newCta = isDark ? "Change to light theme" : "Change to dark theme";
+  // use an aria-label if you are omitting text on the button
+  // and using a sun/moon icon, for example
+  buttonEl.setAttribute("aria-label", newCta);
+  buttonEl.innerText = newCta;
+}
+
+function updateThemeOnHtmlEl({ theme }) {
+  document.querySelector("html").setAttribute("data-theme", theme);
+}
+
+const button = document.querySelector("[data-theme-toggle]");
+const localStorageTheme = localStorage.getItem("theme");
+const systemSettingDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+let currentThemeSetting = calculateSettingAsThemeString({
+  localStorageTheme,
+  systemSettingDark,
+});
+
+updateButton({ buttonEl: button, isDark: currentThemeSetting === "dark" });
+updateThemeOnHtmlEl({ theme: currentThemeSetting });
+
+button.addEventListener("click", () => {
+  const newTheme = currentThemeSetting === "dark" ? "light" : "dark";
+
+  localStorage.setItem("theme", newTheme);
+  updateButton({ buttonEl: button, isDark: newTheme === "dark" });
+  updateThemeOnHtmlEl({ theme: newTheme });
+
+  currentThemeSetting = newTheme;
+});
+
 // Function to fetch data and populate the list
 async function fetchData(endpoint, listElement, includeFavicon = false) {
   try {
@@ -291,11 +340,13 @@ function showRestartNotification(message, isError = false) {
   notification.style.position = "fixed";
   notification.style.bottom = "20px";
   notification.style.right = "20px";
-  notification.style.backgroundColor = isError ? "#f44336" : "#4caf50"; // Red for errors, green for success
-  notification.style.color = "#fff";
+  notification.style.backgroundColor = isError
+    ? "var(--colour-error)"
+    : "var(--colour-success)";
+  notification.style.color = "var(--colour-text)";
   notification.style.padding = "10px 20px";
   notification.style.borderRadius = "5px";
-  notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.2)";
+  notification.style.boxShadow = "0 2px 5px var(--item-hover-colour)";
   notification.style.zIndex = "1000";
   notification.style.fontSize = "14px";
 

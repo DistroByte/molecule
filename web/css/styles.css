@@ -3,17 +3,48 @@
     --input-width: 20em;
 }
 
+[data-theme="light"] {
+    --colour-background: rgb(255, 252, 240);
+    --colour-background-secondary: rgb(242, 240, 229);
+    --colour-borders: rgb(230, 228, 217);
+    --colour-borders-hovered: rgb(218, 216, 206);
+    --colour-borders-active: rgb(206, 205, 195);
+    --colour-text-faint: rgb(183, 181, 172);
+    --colour-text-muted: rgb(111, 110, 105);
+    --colour-text: rgb(16, 15, 15);
+    --colour-error: rgb(175, 48, 41);
+    --colour-warning: rgb(188, 82, 21);
+    --colour-link: rgb(36, 131, 123);
+    --colour-success: rgb(102, 128, 11);
+    --item-hover-colour: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] {
+    --colour-background: rgb(16, 15, 15);
+    --colour-background-secondary: rgb(28, 27, 26);
+    --colour-borders: rgb(40, 39, 38);
+    --colour-borders-hovered: rgb(52, 51, 49);
+    --colour-borders-active: rgb(64, 62, 60);
+    --colour-text-faint: rgb(87, 86, 83);
+    --colour-text-muted: rgb(135, 133, 128);
+    --colour-text: rgb(206, 205, 195);
+    --colour-error: rgb(209, 77, 65);
+    --colour-warning: rgb(218, 112, 44);
+    --colour-link: rgb(58, 169, 159);
+    --colour-success: rgb(135, 154, 57);
+    --item-hover-colour: rgba(255, 255, 255, 0.2);
+}
+
 body {
     font-family: monospace, sans-serif;
     margin: 20px;
     padding: 0;
-    background-color: rgb(255, 252, 240);
-    color: rgb(16, 15, 15);
+    background-color: var(--colour-background);
+    color: var(--colour-text);
 }
 
 h1,
 h2 {
-    color: rgb(16, 15, 15);
     user-select: none;
     cursor: pointer;
     font-weight: var(--heading-weight);
@@ -43,7 +74,7 @@ ul {
 }
 
 li {
-    background: rgb(242, 240, 229);
+    background: var(--colour-background-secondary);
     margin: 0;
     padding: 10px;
     border-radius: 10px;
@@ -64,7 +95,7 @@ li a {
 
 li:hover {
     transform: scale(1.01);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px var(--item-hover-colour);
 }
 
 .collapsible {
@@ -101,8 +132,8 @@ li:hover {
 
 .restart-button {
     background-color: transparent;
-    color: rgb(111, 110, 105);
-    border: 1px solid rgb(230, 228, 217);
+    color: var(--colour-text-muted);
+    border: 1px solid var(--colour-borders);
     border-radius: 3px;
     padding: 2px 6px;
     font-size: 12px;
@@ -111,14 +142,14 @@ li:hover {
 }
 
 .restart-button:hover {
-    background-color: rgb(188, 82, 21);
-    color: rgb(255, 252, 240);
-    border-color: rgb(188, 82, 21);
+    background-color: var(--colour-warning);
+    color: var(--colour-text);
+    border-color: var(--colour-warning);
 }
 
 .restart-button:active {
-    background-color: rgb(175, 48, 41);
-    border-color: rgb(175, 48, 41);
+    background-color: var(--colour-error);
+    border-color: var(--colour-error);
 }
 
 #auth-modal {
@@ -135,7 +166,7 @@ li:hover {
 }
 
 .auth-modal-content {
-    background: rgb(255, 252, 240);
+    background: var(--colour-background);
     padding: 20px;
     border-radius: 8px;
     width: 300px;
@@ -155,8 +186,9 @@ li:hover {
 .auth-input-container input {
     width: var(--input-width);
     padding: 8px;
-    border: 1px solid rgb(230, 228, 217);
-    background-color: rgb(242, 240, 229);
+    border: 1px solid var(--colour-borders);
+    background-color: var(--colour-background-secondary);
+    color: var(--colour-text);
     border-radius: 4px;
     box-sizing: border-box;
 }
@@ -170,11 +202,12 @@ li:hover {
     border: none;
     cursor: pointer;
     font-size: 14px;
+    color: var(--colour-text-muted);
 }
 
 .auth-submit {
-    background-color: rgb(102, 128, 11);
-    color: rgb(255, 252, 240);
+    background-color: var(--colour-success);
+    color: var(--colour-background);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -183,8 +216,8 @@ li:hover {
 }
 
 .auth-cancel {
-    background-color: rgb(175, 48, 41);
-    color: rgb(255, 252, 240);
+    background-color: var(--colour-error);
+    color: var(--colour-background);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -194,8 +227,8 @@ li:hover {
 }
 
 button {
-    background-color: rgb(242, 240, 229);
-    color: rgb(16, 15, 15);
+    background-color: var(--colour-background-secondary);
+    color: var(--colour-text-muted);
     border: none;
     padding: 10px 20px;
     border-radius: 4px;
@@ -206,14 +239,14 @@ button {
 }
 
 button:hover {
-    background-color: rgb(36, 131, 123);
-    color: rgb(255, 252, 240);
+    background-color: var(--colour-link);
+    color: var(--colour-text);
 }
 
 footer {
     margin-top: 20px;
     text-align: center;
-    color: rgb(111, 110, 105);
+    color: var(--colour-text-muted);
 }
 
 .footer-content {
@@ -224,7 +257,7 @@ footer {
 
 .footer-content p a {
     text-decoration: none;
-    color: rgb(16, 15, 15);
+    color: var(--colour-text-muted);
     text-decoration: underline;
     margin: 0 5px;
 }
