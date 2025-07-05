@@ -224,7 +224,11 @@ func loadConfig(filePath string) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to open YAML file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			logger.Log.Error().Err(cerr).Msg("failed to close config file")
+		}
+	}()
 
 	var config Config
 	if err := yaml.NewDecoder(file).Decode(&config); err != nil {

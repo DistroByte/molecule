@@ -43,7 +43,11 @@ func TestHealthEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to make GET request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Errorf("Failed to close response body: %v", cerr)
+		}
+	}()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
