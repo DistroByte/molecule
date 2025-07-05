@@ -1,2 +1,3 @@
+version: "1"
 run:
   modules-download-mode: vendor

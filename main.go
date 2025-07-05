@@ -142,15 +142,23 @@ func main() {
 	r.Mount("/", apiRouter)
 
 	// if no host specified, use "localhost" in the log message
-	var loggerHost string
+	var serverHost string
 	if config.ServerConfig.Host == "" {
-		loggerHost = "localhost"
+		serverHost = "localhost"
 	} else {
-		loggerHost = config.ServerConfig.Host
+		serverHost = config.ServerConfig.Host
 	}
 
-	logger.Log.Info().Msgf("starting server on http://%s:%d", loggerHost, config.ServerConfig.Port)
-	logger.Log.Fatal().Err(http.ListenAndServe(fmt.Sprintf("%s:%d", config.ServerConfig.Host, config.ServerConfig.Port), r)).Msg("Server failed to start")
+	var serverPort int
+	if config.ServerConfig.Port == 0 {
+		logger.Log.Warn().Msg("no port specified in server config, using default port 8080")
+		serverPort = 8080
+	} else {
+		serverPort = config.ServerConfig.Port
+	}
+
+	logger.Log.Info().Msgf("starting server on http://%s:%d", serverHost, serverPort)
+	logger.Log.Fatal().Err(http.ListenAndServe(fmt.Sprintf("%s:%d", config.ServerConfig.Host, serverPort), r)).Msg("Server failed to start")
 }
 
 func requestIDMiddleware(next http.Handler) http.Handler {
