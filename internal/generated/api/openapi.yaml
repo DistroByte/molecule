@@ -203,6 +203,7 @@ components:
     getURLs_200_response_inner:
       example:
         service: service
+        icon: icon
         url: url
         fetched: true
       properties:
@@ -216,6 +217,9 @@ components:
           description: Indicates if the URL has been fetched from nomad or loaded
             from the config file.
           type: boolean
+        icon:
+          description: "The icon associated with the URL, if any."
+          type: string
       required:
       - fetched
       - service
