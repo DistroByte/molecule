@@ -134,11 +134,18 @@ async function generateListItems(data, includeFavicon) {
   return items.join("");
 }
 
-// Set up copy functionality for non-URL items
+// Set up copy functionality for non-URL items. Don't copy when the restart button or the open in new tab button is clicked
 function setupCopyableItems(listElement) {
   const copyableItems = listElement.querySelectorAll(".copyable");
   copyableItems.forEach((item) => {
-    item.addEventListener("click", () => {
+    item.addEventListener("click", (event) => {
+      // Prevent copy if the click was on a restart button or open-in-new-tab link
+      if (
+        event.target.classList.contains("restart-button") ||
+        event.target.classList.contains("open-in-new-tab")
+      ) {
+        return;
+      }
       const valueToCopy = item.getAttribute("data-value");
       navigator.clipboard
         .writeText(valueToCopy)
@@ -261,7 +268,10 @@ function generateListItemTemplate(
     return `
     <li class="copyable" data-value="${url}">
       ${service}: ${url}
-      <button class="restart-button" data-service="${service}" style="margin-left: 10px;">R</button>
+      <span style="display: flex; flex-direction: column; gap: 4px; margin-left: 10px;">
+        <a href="http://${url}" target="_blank"><button class="open-in-new-tab">O</button></a>
+        <button class="restart-button" data-service="${service}">R</button>
+      </span>
     </li>`;
   } catch (error) {
     console.error(`Error generating list item for ${service}:`, error);
