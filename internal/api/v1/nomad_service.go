@@ -30,10 +30,12 @@ type NomadServiceInterface interface {
 }
 
 var (
-	standardURLs      = []generated.GetUrls200ResponseInner{}
-	serviceUrls       = []generated.GetUrls200ResponseInner{}
-	hostReservedPorts = []generated.GetUrls200ResponseInner{}
-	servicePorts      = []generated.GetUrls200ResponseInner{}
+	standardURLs        = []generated.GetUrls200ResponseInner{}
+	serviceUrls         = []generated.GetUrls200ResponseInner{}
+	hostReservedPorts   = []generated.GetUrls200ResponseInner{}
+	servicePorts        = []generated.GetUrls200ResponseInner{}
+	traefikRuleTagRegex = regexp.MustCompile("traefik.http.routers.*.rule")
+	iconTagRegex        = regexp.MustCompile("icon=(.*)")
 )
 
 func NewNomadService(nomadClient *api.Client, staticUrls []generated.GetUrls200ResponseInner) NomadServiceInterface {
@@ -66,6 +68,7 @@ func (s *NomadService) ExtractAll(print bool) ([]generated.GetUrls200ResponseInn
 			Service: v.Service,
 			Url:     v.Url,
 			Fetched: true,
+			Icon:    v.Icon,
 		})
 	}
 	for _, v := range hostReservedPorts {
@@ -87,6 +90,7 @@ func (s *NomadService) ExtractAll(print bool) ([]generated.GetUrls200ResponseInn
 			allUrls = append(allUrls, generated.GetUrls200ResponseInner{
 				Service: url.Service,
 				Url:     url.Url,
+				Icon:    url.Icon,
 				Fetched: false,
 			})
 		}
@@ -195,8 +199,6 @@ func (s *NomadService) GetServiceStatus(serviceName string) (map[string]string, 
 	return nil, nil
 }
 
-// when called, this function will restart all allocations for a specific service
-// this is useful when a new version of a service is built and you want to restart all instances
 func (s *NomadService) RestartServiceAllocations(serviceName string) error {
 	allocations, _, err := s.nomadClient.Allocations().List(nil)
 	if err != nil {
@@ -262,7 +264,8 @@ func (s *NomadService) processAllocation(allocation *api.AllocationListStub) {
 	}
 
 	for _, service := range services {
-		s.getTraefikURL(*job.Name, service.Name, service.Tags)
+		s.getUrlDataFromTags(*job.Name, service.Name, service.Tags)
+		s.getIconFromTags(*job.Name, service.Name, service.Tags)
 	}
 }
 
@@ -302,11 +305,10 @@ func (s *NomadService) processTaskGroup(taskGroup *api.TaskGroup, allocation *ap
 	}
 }
 
-func (s *NomadService) getTraefikURL(jobName string, taskName string, tags []string) {
+func (s *NomadService) getUrlDataFromTags(jobName string, taskName string, tags []string) {
 	if slices.Contains(tags, "traefik.enable=true") {
-		re := regexp.MustCompile("traefik.http.routers.*.rule")
 		for _, tag := range tags {
-			if re.MatchString(tag) {
+			if traefikRuleTagRegex.MatchString(tag) {
 				url := strings.Split(tag, "(")[1]
 				url = strings.Split(url, ")")[0]
 				url = url[1 : len(url)-1]
@@ -336,10 +338,32 @@ func (s *NomadService) getTraefikURL(jobName string, taskName string, tags []str
 	}
 }
 
+func (s *NomadService) getIconFromTags(jobName string, taskName string, tags []string) {
+	for _, tag := range tags {
+		if iconTagRegex.MatchString(tag) {
+			icon := iconTagRegex.FindStringSubmatch(tag)
+			if len(icon) > 0 {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+
+				for i, url := range serviceUrls {
+					if url.Service == jobName || url.Service == jobName+"-"+taskName {
+						serviceUrls[i].Icon = icon[1]
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
 func prettyPrint() {
 	printTable("Service", "URL", serviceUrls)
 	printTable("Host Reserved Ports", "Port", hostReservedPorts)
 	printTable("Service Ports", "Port", servicePorts)
+	if len(standardURLs) > 0 {
+		printTable("Standard URLs", "URL", standardURLs)
+	}
 }
 
 func printTable(header1, header2 string, data []generated.GetUrls200ResponseInner) {
@@ -355,6 +379,9 @@ func printTable(header1, header2 string, data []generated.GetUrls200ResponseInne
 
 	for key := range keys {
 		t.AppendRow([]interface{}{key, data[key].Url})
+		if data[key].Icon != "" {
+			t.AppendRow([]interface{}{"", fmt.Sprintf("Icon: %s", data[key].Icon)})
+		}
 	}
 
 	t.Render()

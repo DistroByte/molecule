@@ -23,6 +23,9 @@ type GetUrls200ResponseInner struct {
 
 	// Indicates if the URL has been fetched from nomad or loaded from the config file.
 	Fetched bool `json:"fetched"`
+
+	// The icon associated with the URL, if any.
+	Icon string `json:"icon,omitempty"`
 }
 
 // AssertGetUrls200ResponseInnerRequired checks if the required fields are not zero-ed

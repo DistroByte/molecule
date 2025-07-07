@@ -36,7 +36,7 @@ function calculateSettingAsThemeString({
   return "light";
 }
 
-function updateButton({ buttonEl, isDark }) {
+function updateThemeButton({ buttonEl, isDark }) {
   const newCta = isDark ? "Change to light theme" : "Change to dark theme";
   // use an aria-label if you are omitting text on the button
   // and using a sun/moon icon, for example
@@ -57,14 +57,14 @@ let currentThemeSetting = calculateSettingAsThemeString({
   systemSettingDark,
 });
 
-updateButton({ buttonEl: button, isDark: currentThemeSetting === "dark" });
+updateThemeButton({ buttonEl: button, isDark: currentThemeSetting === "dark" });
 updateThemeOnHtmlEl({ theme: currentThemeSetting });
 
 button.addEventListener("click", () => {
   const newTheme = currentThemeSetting === "dark" ? "light" : "dark";
 
   localStorage.setItem("theme", newTheme);
-  updateButton({ buttonEl: button, isDark: newTheme === "dark" });
+  updateThemeButton({ buttonEl: button, isDark: newTheme === "dark" });
   updateThemeOnHtmlEl({ theme: newTheme });
 
   currentThemeSetting = newTheme;
@@ -107,16 +107,18 @@ async function generateListItems(data, includeFavicon) {
   const items = await Promise.all(
     data.map(async (entry) => {
       if (includeFavicon && entry.url.startsWith("http")) {
-        const faviconUrl = fetchFavicon(entry.service);
         entry.service = entry.service.includes("-")
           ? entry.service.slice(0, entry.service.lastIndexOf("-"))
           : entry.service;
+
+        if (!entry.icon) entry.icon = await fetchFavicon(entry.service);
+
         return generateListItemTemplate(
           entry.service,
           entry.url,
           entry.fetched,
           includeFavicon,
-          faviconUrl
+          entry.icon
         );
       }
 

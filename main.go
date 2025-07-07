@@ -30,6 +30,7 @@ type Config struct {
 	StandardURLs []struct {
 		Service string `yaml:"service"`
 		URL     string `yaml:"url"`
+		Icon    string `yaml:"icon,omitempty"`
 	} `yaml:"standard_urls"`
 
 	ServerConfig struct {
@@ -78,6 +79,7 @@ func main() {
 			standardURLsSlice = append(standardURLsSlice, generated.GetUrls200ResponseInner{
 				Service: entry.Service,
 				Url:     entry.URL,
+				Icon:    entry.Icon,
 				Fetched: false,
 			})
 		}

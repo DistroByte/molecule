@@ -1,12 +1,7 @@
 standard_urls:
-  - service: "nomad"
-    url: "http://zeus.internal:4646"
-  - service: "consul"
-    url: "http://zeus.internal:8500"
-  - service: "traefik"
-    url: "http://hermes.internal:8081"
-  - service: "synology-dsm"
-    url: "https://dionysus.internal:5001"
+  - service: "ihatenixostest"
+    url: "https://ihatenixos.org"
+    icon: "https://ihatenixos.org/favicon.ico"
 
 nomad:
   address: "http://zeus.internal:4646"

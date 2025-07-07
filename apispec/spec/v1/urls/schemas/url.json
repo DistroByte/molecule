@@ -12,6 +12,10 @@
         "fetched": {
             "type": "boolean",
             "description": "Indicates if the URL has been fetched from nomad or loaded from the config file."
+        },
+        "icon": {
+            "type": "string",
+            "description": "The icon associated with the URL, if any."
         }
     },
     "required": ["service", "url", "fetched"]
