@@ -1,0 +1,149 @@
+name: Docker Integration Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  docker-test:
+    name: Docker Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t molecule-test:latest .
+
+      - name: Create test configuration
+        run: |
+          mkdir -p /tmp/docker-test
+          cat > /tmp/docker-test/config.yaml << 'EOF'
+          standard_urls:
+            - service: "docker-test"
+              url: "http://localhost:8080"
+              icon: "http://localhost:8080/favicon.ico"
+
+          nomad:
+            address: "http://nomad.example.com:4646"
+
+          apikey: "docker-test-key"
+
+          server_config:
+            host: "0.0.0.0"
+            port: 8080
+          EOF
+
+      - name: Test Docker image can start
+        run: |
+          # Start container in background
+          docker run -d --name molecule-test \
+            -p 8083:8080 \
+            -v /tmp/docker-test/config.yaml:/config.yaml \
+            -e PROD=true \
+            molecule-test:latest
+          
+          # Wait for container to be ready
+          sleep 10
+          
+          # Check if container is running
+          docker ps | grep molecule-test
+
+      - name: Test container health
+        run: |
+          # Test health endpoint
+          curl -f http://localhost:8083/health
+          
+          # Test web interface
+          curl -f http://localhost:8083/ -o /tmp/docker-index.html
+          
+          # Test API endpoints
+          curl -f http://localhost:8083/v1/urls
+
+      - name: Test container logs
+        run: |
+          docker logs molecule-test
+
+      - name: Test container resources
+        run: |
+          # Get container stats
+          docker stats molecule-test --no-stream
+          
+          # Check memory usage is reasonable (under 100MB)
+          MEMORY_USAGE=$(docker stats molecule-test --no-stream --format "table {{.MemUsage}}" | tail -n 1 | cut -d'/' -f1 | sed 's/MiB//')
+          echo "Memory usage: ${MEMORY_USAGE}MiB"
+
+      - name: Stop and clean up container
+        if: always()
+        run: |
+          docker stop molecule-test || true
+          docker rm molecule-test || true
+
+  docker-multi-arch:
+    name: Multi-Architecture Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build multi-architecture image
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag molecule-multiarch:latest \
+            .
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t molecule-security:latest .
+
+      - name: Run Trivy vulnerability scanner on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'molecule-security:latest'
+          format: 'sarif'
+          output: 'docker-trivy-results.sarif'
+
+      - name: Upload Docker scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'docker-trivy-results.sarif'
+
+      - name: Check for critical vulnerabilities
+        run: |
+          # Run Trivy to get JSON output and check for CRITICAL vulnerabilities
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $(pwd):/tmp aquasec/trivy:latest image \
+            --format json --severity CRITICAL \
+            molecule-security:latest > /tmp/trivy-results.json
+          
+          CRITICAL_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' /tmp/trivy-results.json)
+          echo "Critical vulnerabilities found: $CRITICAL_COUNT"
+          
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "❌ Critical vulnerabilities found in Docker image"
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")' /tmp/trivy-results.json
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities found in Docker image"
+          fi

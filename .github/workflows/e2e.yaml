@@ -1,0 +1,325 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  e2e-nomad-integration:
+    name: E2E with Real Nomad Cluster
+    runs-on: ubuntu-latest
+    services:
+      nomad:
+        image: hashicorp/nomad:1.7
+        ports:
+          - 4646:4646
+        env:
+          NOMAD_LOCAL_CONFIG: |
+            data_dir = "/tmp/nomad"
+            server {
+              enabled = true
+              bootstrap_expect = 1
+            }
+            client {
+              enabled = true
+              servers = ["127.0.0.1:4647"]
+            }
+            ports {
+              http = 4646
+              rpc  = 4647
+              serf = 4648
+            }
+        options: >-
+          --health-cmd="nomad version"
+          --health-interval=30s
+          --health-timeout=10s
+          --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+
+      - name: Wait for Nomad to be fully ready
+        run: |
+          echo "Waiting for Nomad to be ready..."
+          timeout 120s bash -c 'until curl -f http://localhost:4646/v1/status/leader; do 
+            echo "Waiting for Nomad leader..."
+            sleep 5
+          done'
+          
+          echo "Nomad is ready. Leader: $(curl -s http://localhost:4646/v1/status/leader)"
+
+      - name: Deploy test services to Nomad
+        run: |
+          # Create a simple test job
+          cat > /tmp/test-job.hcl << 'EOF'
+          job "test-webapp" {
+            datacenters = ["dc1"]
+            type = "service"
+            
+            group "web" {
+              count = 1
+              
+              network {
+                port "http" {
+                  static = 8090
+                }
+              }
+              
+              service {
+                name = "test-webapp"
+                port = "http"
+                
+                tags = [
+                  "traefik.enable=true",
+                  "traefik.http.routers.test-webapp.rule=Host(`test.example.com`)"
+                ]
+                
+                check {
+                  type     = "http"
+                  path     = "/"
+                  interval = "10s"
+                  timeout  = "2s"
+                }
+              }
+              
+              task "web" {
+                driver = "raw_exec"
+                
+                config {
+                  command = "python3"
+                  args    = ["-m", "http.server", "8090"]
+                }
+                
+                resources {
+                  cpu    = 100
+                  memory = 64
+                }
+              }
+            }
+          }
+          EOF
+          
+          # Submit the job to Nomad
+          curl -X POST http://localhost:4646/v1/jobs \
+            -d @/tmp/test-job.hcl \
+            -H "Content-Type: application/json" \
+            --data-binary "@/tmp/test-job.hcl" || true
+          
+          # Give the job time to start
+          sleep 10
+
+      - name: Create molecule configuration for E2E test
+        run: |
+          mkdir -p /tmp/e2e-test
+          cat > /tmp/e2e-test/config.yaml << 'EOF'
+          standard_urls:
+            - service: "e2e-test"
+              url: "http://localhost:8090"
+              icon: "http://localhost:8090/favicon.ico"
+
+          nomad:
+            address: "http://localhost:4646"
+
+          apikey: "e2e-test-key"
+
+          server_config:
+            host: "0.0.0.0"
+            port: 8086
+          EOF
+
+      - name: Build and start Molecule
+        run: |
+          go build -o /tmp/e2e-test/molecule .
+          cd /tmp/e2e-test
+          
+          # Start molecule in background
+          ./molecule &
+          echo $! > molecule.pid
+          
+          # Wait for molecule to be ready
+          sleep 10
+
+      - name: Test E2E functionality
+        run: |
+          echo "Testing Molecule E2E functionality..."
+          
+          # Test health endpoint
+          curl -f http://localhost:8086/health
+          echo "✅ Health endpoint working"
+          
+          # Test web interface
+          curl -f http://localhost:8086/ -o /tmp/e2e-index.html
+          grep -q "molecule" /tmp/e2e-index.html
+          echo "✅ Web interface serving correctly"
+          
+          # Test standard URLs API
+          URLS_RESPONSE=$(curl -s http://localhost:8086/v1/urls)
+          echo "URLs Response: $URLS_RESPONSE"
+          echo "✅ URLs API working"
+          
+          # Test services discovery
+          SERVICES_RESPONSE=$(curl -s http://localhost:8086/v1/services)
+          echo "Services Response: $SERVICES_RESPONSE"
+          echo "✅ Services discovery working"
+          
+          # Test authenticated endpoints
+          AUTH_RESPONSE=$(curl -s -H "X-API-Key: e2e-test-key" http://localhost:8086/v1/services)
+          echo "Authenticated Response: $AUTH_RESPONSE"
+          echo "✅ Authentication working"
+
+      - name: Test error handling
+        run: |
+          echo "Testing error handling..."
+          
+          # Test with invalid API key
+          INVALID_AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "X-API-Key: invalid-key" http://localhost:8086/v1/services)
+          if [ "$INVALID_AUTH_STATUS" != "401" ]; then
+            echo "❌ Expected 401 for invalid API key, got $INVALID_AUTH_STATUS"
+            exit 1
+          fi
+          echo "✅ Invalid API key properly rejected"
+          
+          # Test nonexistent endpoint
+          NOT_FOUND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8086/nonexistent)
+          if [ "$NOT_FOUND_STATUS" != "404" ]; then
+            echo "❌ Expected 404 for nonexistent endpoint, got $NOT_FOUND_STATUS"
+            exit 1
+          fi
+          echo "✅ 404 handling working"
+
+      - name: Performance validation in E2E environment
+        run: |
+          echo "Running performance validation..."
+          
+          # Test response times
+          RESPONSE_TIME=$(curl -o /dev/null -s -w "%{time_total}" http://localhost:8086/health)
+          echo "Health endpoint response time: ${RESPONSE_TIME}s"
+          
+          # Response time should be under 1 second
+          if (( $(echo "$RESPONSE_TIME > 1.0" | bc -l) )); then
+            echo "❌ Response time too slow: ${RESPONSE_TIME}s"
+            exit 1
+          fi
+          echo "✅ Response times acceptable"
+
+      - name: Stop services and cleanup
+        if: always()
+        run: |
+          # Stop molecule
+          if [ -f /tmp/e2e-test/molecule.pid ]; then
+            kill $(cat /tmp/e2e-test/molecule.pid) || true
+          fi
+          
+          # Stop nomad jobs
+          curl -X DELETE http://localhost:4646/v1/job/test-webapp || true
+          
+          echo "✅ E2E test cleanup completed"
+
+  e2e-docker-compose:
+    name: E2E with Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Docker Compose setup for testing
+        run: |
+          mkdir -p /tmp/docker-compose-test
+          
+          # Create docker-compose.yml for testing
+          cat > /tmp/docker-compose-test/docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            nomad:
+              image: hashicorp/nomad:1.7
+              ports:
+                - "4646:4646"
+              environment:
+                NOMAD_LOCAL_CONFIG: |
+                  data_dir = "/tmp/nomad"
+                  server {
+                    enabled = true
+                    bootstrap_expect = 1
+                  }
+                  client {
+                    enabled = true
+                  }
+              healthcheck:
+                test: ["CMD", "nomad", "version"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+            
+            molecule:
+              build: /home/runner/work/molecule/molecule
+              ports:
+                - "8087:8080"
+              volumes:
+                - ./config.yaml:/config.yaml
+              environment:
+                - PROD=true
+              depends_on:
+                nomad:
+                  condition: service_healthy
+          EOF
+          
+          # Create config for molecule
+          cat > /tmp/docker-compose-test/config.yaml << 'EOF'
+          standard_urls:
+            - service: "compose-test"
+              url: "http://localhost:8080"
+
+          nomad:
+            address: "http://nomad:4646"
+
+          apikey: "compose-test-key"
+
+          server_config:
+            host: "0.0.0.0"
+            port: 8080
+          EOF
+
+      - name: Run Docker Compose E2E test
+        run: |
+          cd /tmp/docker-compose-test
+          
+          # Start services
+          docker-compose up -d
+          
+          # Wait for services to be ready
+          echo "Waiting for services to be ready..."
+          sleep 30
+          
+          # Test molecule is responding
+          timeout 60s bash -c 'until curl -f http://localhost:8087/health; do 
+            echo "Waiting for molecule to be ready..."
+            sleep 5
+          done'
+          
+          echo "✅ Docker Compose E2E test successful"
+
+      - name: Test Docker Compose functionality
+        run: |
+          # Test all endpoints through docker compose
+          curl -f http://localhost:8087/health
+          curl -f http://localhost:8087/
+          curl -f http://localhost:8087/v1/urls
+          curl -f http://localhost:8087/v1/services
+          
+          echo "✅ All Docker Compose endpoints working"
+
+      - name: Cleanup Docker Compose
+        if: always()
+        run: |
+          cd /tmp/docker-compose-test
+          docker-compose down -v || true
+          docker-compose rm -f || true

@@ -1,0 +1,202 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run performance tests weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+
+jobs:
+  benchmark:
+    name: Go Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+
+      - name: Run benchmarks
+        run: |
+          # Create benchmark output directory
+          mkdir -p /tmp/benchmarks
+          
+          # Run benchmarks with memory profiling
+          go test -bench=. -benchmem -cpuprofile=/tmp/benchmarks/cpu.prof -memprofile=/tmp/benchmarks/mem.prof ./... > /tmp/benchmarks/results.txt 2>&1 || true
+          
+          # Display results
+          cat /tmp/benchmarks/results.txt
+
+      - name: Install go tool pprof
+        run: go install -a std
+
+      - name: Generate performance reports
+        run: |
+          if [ -f /tmp/benchmarks/cpu.prof ]; then
+            echo "CPU Profile generated successfully"
+            # You could generate reports here if needed
+          fi
+          
+          if [ -f /tmp/benchmarks/mem.prof ]; then
+            echo "Memory Profile generated successfully"
+            # You could generate reports here if needed
+          fi
+
+  memory-test:
+    name: Memory Usage Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+
+      - name: Install memory profiling tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+
+      - name: Create test configuration
+        run: |
+          mkdir -p /tmp/memory-test
+          cat > /tmp/memory-test/config.yaml << 'EOF'
+          standard_urls:
+            - service: "memory-test"
+              url: "http://localhost:8080"
+
+          nomad:
+            address: "http://nomad.example.com:4646"
+
+          apikey: "memory-test-key"
+
+          server_config:
+            host: "127.0.0.1"
+            port: 8084
+          EOF
+
+      - name: Build application with debug info
+        run: |
+          go build -gcflags="-N -l" -o /tmp/memory-test/molecule .
+
+      - name: Test memory usage over time
+        run: |
+          cd /tmp/memory-test
+          
+          # Start application in background
+          ./molecule &
+          APP_PID=$!
+          echo $APP_PID > app.pid
+          
+          # Wait for startup
+          sleep 5
+          
+          # Monitor memory usage for 30 seconds
+          echo "Monitoring memory usage..."
+          for i in {1..30}; do
+            if ps -p $APP_PID > /dev/null; then
+              MEMORY_KB=$(ps -p $APP_PID -o rss= 2>/dev/null || echo "0")
+              MEMORY_MB=$((MEMORY_KB / 1024))
+              echo "Time ${i}s: Memory usage ${MEMORY_MB}MB"
+              
+              # Fail if memory usage exceeds 200MB (reasonable limit)
+              if [ $MEMORY_MB -gt 200 ]; then
+                echo "❌ Memory usage exceeded 200MB limit: ${MEMORY_MB}MB"
+                kill $APP_PID
+                exit 1
+              fi
+            else
+              echo "❌ Application process died unexpectedly"
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Clean shutdown
+          kill $APP_PID
+          wait $APP_PID 2>/dev/null || true
+          echo "✅ Memory usage remained within acceptable limits"
+
+  startup-time:
+    name: Startup Performance Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+
+      - name: Create test configuration
+        run: |
+          mkdir -p /tmp/startup-test
+          cat > /tmp/startup-test/config.yaml << 'EOF'
+          standard_urls:
+            - service: "startup-test"
+              url: "http://localhost:8080"
+
+          nomad:
+            address: "http://nomad.example.com:4646"
+
+          apikey: "startup-test-key"
+
+          server_config:
+            host: "127.0.0.1"
+            port: 8085
+          EOF
+
+      - name: Build application
+        run: |
+          go build -o /tmp/startup-test/molecule .
+
+      - name: Test application startup time
+        run: |
+          cd /tmp/startup-test
+          
+          echo "Testing application startup time..."
+          
+          # Test startup time (should be under 5 seconds)
+          START_TIME=$(date +%s)
+          
+          # Start application
+          timeout 10s ./molecule &
+          APP_PID=$!
+          
+          # Wait for the application to start serving requests
+          READY=false
+          for i in {1..50}; do  # 5 second timeout (50 * 0.1s)
+            if curl -s http://127.0.0.1:8085/health > /dev/null 2>&1; then
+              END_TIME=$(date +%s)
+              STARTUP_TIME=$((END_TIME - START_TIME))
+              echo "✅ Application started in ${STARTUP_TIME} seconds"
+              READY=true
+              break
+            fi
+            sleep 0.1
+          done
+          
+          # Clean up
+          kill $APP_PID 2>/dev/null || true
+          wait $APP_PID 2>/dev/null || true
+          
+          if [ "$READY" = false ]; then
+            echo "❌ Application failed to start within 5 seconds"
+            exit 1
+          fi
+          
+          if [ $STARTUP_TIME -gt 5 ]; then
+            echo "❌ Startup time exceeded 5 seconds: ${STARTUP_TIME}s"
+            exit 1
+          fi
+          
+          echo "✅ Startup performance test passed"
