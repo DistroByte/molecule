@@ -46,9 +46,9 @@ func main() {
 		}
 
 		// Convert config URLs to generated format
-		var standardURLsSlice []generated.GetUrls200ResponseInner
+		var standardURLsSlice []generated.ServiceUrl
 		for _, entry := range cfg.StandardURLs {
-			standardURLsSlice = append(standardURLsSlice, generated.GetUrls200ResponseInner{
+			standardURLsSlice = append(standardURLsSlice, generated.ServiceUrl{
 				Service: entry.Service,
 				Url:     entry.URL,
 				Icon:    entry.Icon,

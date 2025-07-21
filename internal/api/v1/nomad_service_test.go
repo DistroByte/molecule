@@ -98,7 +98,7 @@ func (m *MockNodes) Info(nodeID string, q *api.QueryOptions) (*api.Node, *api.Qu
 
 // Test functions with simpler interface
 func TestMakeUnique(t *testing.T) {
-	input := []generated.GetUrls200ResponseInner{
+	input := []generated.ServiceUrl{
 		{Service: "service1", Url: "https://service1.com"},
 		{Service: "service2", Url: "https://service2.com"},
 		{Service: "service1", Url: "https://service1-duplicate.com"}, // Should be deduplicated
@@ -167,7 +167,7 @@ func TestRegexes(t *testing.T) {
 func TestNomadService_NewNomadService(t *testing.T) {
 	// Test the constructor
 	mockClient := &api.Client{}
-	standardURLs := []generated.GetUrls200ResponseInner{
+	standardURLs := []generated.ServiceUrl{
 		{Service: "test", Url: "https://test.com"},
 	}
 
@@ -180,7 +180,7 @@ func TestNomadService_NewNomadService(t *testing.T) {
 func TestNomadService_CreationAndInterfaces(t *testing.T) {
 	// Test the constructor with actual client (but don't call methods that need API)
 	mockClient := &api.Client{}
-	standardURLs := []generated.GetUrls200ResponseInner{
+	standardURLs := []generated.ServiceUrl{
 		{Service: "test", Url: "https://test.com"},
 	}
 

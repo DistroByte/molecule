@@ -1,4 +1,5 @@
 {
+    "title": "ServiceUrlsList",
     "type": "array",
     "items": {
         "$ref": "url.json"
