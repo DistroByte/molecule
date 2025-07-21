@@ -6,6 +6,6 @@ go/error.go
 go/helpers.go
 go/impl.go
 go/logger.go
-go/model_get_urls_200_response_inner.go
 go/model_get_urls_400_response.go
+go/model_service_url.go
 go/routers.go

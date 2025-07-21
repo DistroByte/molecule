@@ -7,7 +7,7 @@ import (
 
 type MockNomadService struct{}
 
-var urls = []generated.GetUrls200ResponseInner{
+var urls = []generated.ServiceUrl{
 	{
 		Service: "nomad",
 		Url:     "http://zeus.internal:4646",
@@ -26,22 +26,22 @@ func NewMockNomadService() NomadServiceInterface {
 	return &MockNomadService{}
 }
 
-func (m *MockNomadService) ExtractAll(print bool) ([]generated.GetUrls200ResponseInner, error) {
+func (m *MockNomadService) ExtractAll(print bool) ([]generated.ServiceUrl, error) {
 	logger.Log.Debug().Msg("Mock: ExtractAll called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractURLs() ([]generated.GetUrls200ResponseInner, error) {
+func (m *MockNomadService) ExtractURLs() ([]generated.ServiceUrl, error) {
 	logger.Log.Debug().Msg("Mock: ExtractURLs called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractHostPorts() ([]generated.GetUrls200ResponseInner, error) {
+func (m *MockNomadService) ExtractHostPorts() ([]generated.ServiceUrl, error) {
 	logger.Log.Debug().Msg("Mock: ExtractHostPorts called")
 	return urls, nil
 }
 
-func (m *MockNomadService) ExtractServicePorts() ([]generated.GetUrls200ResponseInner, error) {
+func (m *MockNomadService) ExtractServicePorts() ([]generated.ServiceUrl, error) {
 	logger.Log.Debug().Msg("Mock: ExtractServicePorts called")
 	return urls, nil
 }
