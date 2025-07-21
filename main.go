@@ -2,80 +2,53 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/goccy/go-yaml"
-	"github.com/google/uuid"
 	"github.com/hashicorp/nomad/api"
-	"github.com/rs/zerolog"
 
 	v1 "github.com/DistroByte/molecule/internal/api/v1"
+	"github.com/DistroByte/molecule/internal/config"
 	generated "github.com/DistroByte/molecule/internal/generated/go"
+	"github.com/DistroByte/molecule/internal/server"
 	"github.com/DistroByte/molecule/logger"
 )
 
 //go:generate docker run --rm -v $PWD:/spec redocly/cli lint apispec/spec/index.yaml
 //go:generate docker run -u 1000:1000 --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/apispec/spec/index.yaml -g go-server -o /local/internal/generated -c /local/apispec/server-config.yaml
 
-type Config struct {
-	Nomad struct {
-		Address string `yaml:"address"`
-	} `yaml:"nomad"`
-
-	StandardURLs []struct {
-		Service string `yaml:"service"`
-		URL     string `yaml:"url"`
-		Icon    string `yaml:"icon,omitempty"`
-	} `yaml:"standard_urls"`
-
-	ServerConfig struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
-	} `yaml:"server_config"`
-}
-
-var config Config
-
 func main() {
 	logger.InitLogger()
-
 	logger.Log.Info().Msg("logger initialized")
 
+	// Load configuration
+	var cfg *config.Config
 	var nomadService v1.NomadServiceInterface
 
 	if os.Getenv("PROD") == "true" {
-		configFilePath := os.Getenv("CONFIG_FILE")
 		var err error
-
-		if configFilePath == "" {
-			logger.Log.Fatal().Msg("CONFIG_FILE environment variable is not set - not loading config")
-		} else {
-			config, err = loadConfig(configFilePath)
-
-			if err != nil {
-				logger.Log.Error().Err(err).Msg("failed to load config file")
-				return
-			}
-		}
-
-		if len(config.StandardURLs) == 0 {
-			logger.Log.Warn().Msg("no standard URLs found in YAML file")
-		}
-
-		nomadClient, err := api.NewClient(&api.Config{Address: config.Nomad.Address})
+		cfg, err = config.LoadFromEnvironment()
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("failed to create api client")
+			logger.Log.Fatal().Err(err).Msg("failed to load configuration")
+		}
+
+		if len(cfg.StandardURLs) == 0 {
+			logger.Log.Warn().Msg("no standard URLs found in configuration")
+		}
+
+		// Create Nomad client
+		nomadClient, err := api.NewClient(&api.Config{Address: cfg.Nomad.Address})
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("failed to create nomad client")
 			return
 		}
 
-		// make an array of URLInfo from the standard URLs
+		// Convert config URLs to generated format
 		var standardURLsSlice []generated.GetUrls200ResponseInner
-		for _, entry := range config.StandardURLs {
+		for _, entry := range cfg.StandardURLs {
 			standardURLsSlice = append(standardURLsSlice, generated.GetUrls200ResponseInner{
 				Service: entry.Service,
 				Url:     entry.URL,
@@ -86,22 +59,34 @@ func main() {
 		nomadService = v1.NewNomadService(nomadClient, standardURLsSlice)
 	} else {
 		nomadService = v1.NewMockNomadService()
+		cfg = &config.Config{} // Default config for dev mode
+		cfg.ServerConfig.Port = 8080
 	}
 
-	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
-	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
-
-	// Add X-API-KEY authentication
+	// Validate API key
 	apiKey := os.Getenv("API_KEY")
 	logger.Log.Trace().Msgf("API_KEY: %s", apiKey)
 	if apiKey == "" {
 		logger.Log.Fatal().Msg("API_KEY environment variable is required")
 	}
 
-	r := chi.NewRouter()
-	r.Use(requestIDMiddleware)
-	r.Use(zerologMiddleware)
+	// Create services
+	moleculeAPIService := v1.NewMoleculeAPIService(nomadService)
+	moleculeAPIController := generated.NewDefaultAPIController(moleculeAPIService)
 
+	// Create and configure server
+	srv := server.New(cfg.ServerConfig.Host, cfg.ServerConfig.Port)
+	r := srv.Router()
+
+	// Setup routes
+	setupRoutes(r, moleculeAPIController, apiKey)
+
+	// Start server
+	logger.Log.Fatal().Err(srv.Start()).Msg("server failed to start")
+}
+
+// setupRoutes configures all application routes
+func setupRoutes(r chi.Router, moleculeAPIController *generated.DefaultAPIController, apiKey string) {
 	// Serve static HTML content from the root
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./web/index.html")
@@ -132,118 +117,16 @@ func main() {
 		}
 	})
 
+	// Setup API routes with authentication
 	apiRouter := chi.NewRouter()
-	apiRouter.Use(apiKeyAuthHandler(apiKey))
+	apiRouter.Use(server.APIKeyAuthMiddleware(apiKey))
+	
 	for _, route := range moleculeAPIController.Routes() {
-		if requiresAuth(route.Pattern) {
+		if server.RequiresAuth(route.Pattern) {
 			apiRouter.Method(route.Method, route.Pattern, route.HandlerFunc)
 		} else {
 			r.Method(route.Method, route.Pattern, route.HandlerFunc)
 		}
 	}
 	r.Mount("/", apiRouter)
-
-	// if no host specified, use "localhost" in the log message
-	var serverHost string
-	if config.ServerConfig.Host == "" {
-		serverHost = "localhost"
-	} else {
-		serverHost = config.ServerConfig.Host
-	}
-
-	var serverPort int
-	if config.ServerConfig.Port == 0 {
-		logger.Log.Warn().Msg("no port specified in server config, using default port 8080")
-		serverPort = 8080
-	} else {
-		serverPort = config.ServerConfig.Port
-	}
-
-	logger.Log.Info().Msgf("starting server on http://%s:%d", serverHost, serverPort)
-	logger.Log.Fatal().Err(http.ListenAndServe(fmt.Sprintf("%s:%d", config.ServerConfig.Host, serverPort), r)).Msg("Server failed to start")
-}
-
-func requestIDMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := uuid.New().String()
-		httpLogger := logger.Log.With().Str("request_id", requestID).Logger()
-		r = r.WithContext(httpLogger.WithContext(r.Context()))
-		w.Header().Set("X-Request-ID", requestID)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func zerologMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-
-		httpLogger := zerolog.Ctx(r.Context())
-		defer func() {
-			httpLogger.Info().
-				Str("method", r.Method).
-				Str("path", r.URL.Path).
-				Int("status", ww.Status()).
-				Int("bytes", ww.BytesWritten()).
-				Str("remote", r.RemoteAddr).
-				Dur("duration", time.Since(start)).
-				Msg("handled request")
-		}()
-
-		next.ServeHTTP(ww, r)
-	})
-}
-
-func apiKeyAuthHandler(key string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-API-KEY") != key {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-func requiresAuth(pattern string) bool {
-	logger.Log.Debug().Msgf("checking if route %s requires authentication", pattern)
-	authenticatedRoutes := []string{
-		"/v1/services/{service}/alloc-restart",
-	}
-
-	for _, route := range authenticatedRoutes {
-		if route == pattern {
-			logger.Log.Debug().Msgf("route %s requires authentication", pattern)
-			return true
-		}
-	}
-	return false
-}
-
-func loadConfig(filePath string) (Config, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return Config{}, fmt.Errorf("failed to open YAML file: %w", err)
-	}
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			logger.Log.Error().Err(cerr).Msg("failed to close config file")
-		}
-	}()
-
-	var config Config
-	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
-		return Config{}, fmt.Errorf("failed to decode YAML file: %w", err)
-	}
-
-	// Set default values for server config if not provided
-	if config.ServerConfig.Port == 0 {
-		logger.Log.Warn().Msg("no port specified in server config, using default port 8080")
-		config.ServerConfig.Port = 8080
-	}
-
-	logger.Log.Debug().Any("config", config).Msg("config loaded")
-
-	return config, nil
 }
