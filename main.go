@@ -1,18 +1,17 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/nomad/api"
 
 	v1 "github.com/DistroByte/molecule/internal/api/v1"
 	"github.com/DistroByte/molecule/internal/config"
 	generated "github.com/DistroByte/molecule/internal/generated/go"
+	"github.com/DistroByte/molecule/internal/handlers"
 	"github.com/DistroByte/molecule/internal/server"
 	"github.com/DistroByte/molecule/logger"
 )
@@ -87,35 +86,20 @@ func main() {
 
 // setupRoutes configures all application routes
 func setupRoutes(r chi.Router, moleculeAPIController *generated.DefaultAPIController, apiKey string) {
-	// Serve static HTML content from the root
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./web/index.html")
-	})
+	// Create handlers
+	staticHandler := handlers.NewStaticHandler()
+	specHandler := handlers.NewAPISpecHandler()
+
+	// Static content routes
+	r.Get("/", staticHandler.ServeHome)
 
 	r.Route("/static", func(staticRouter chi.Router) {
 		staticRouter.Use(middleware.NoCache)
 		staticRouter.Handle("/*", http.StripPrefix("/static", http.FileServer(http.Dir("./web"))))
 	})
 
-	r.Get("/api/spec.json", func(w http.ResponseWriter, r *http.Request) {
-		specPath := "./apispec/spec/index.yaml"
-		yamlData, err := os.ReadFile(specPath)
-		if err != nil {
-			http.Error(w, "failed to read OpenAPI spec", http.StatusInternalServerError)
-			return
-		}
-
-		var jsonData map[string]interface{}
-		if err := yaml.Unmarshal(yamlData, &jsonData); err != nil {
-			http.Error(w, "failed to parse OpenAPI spec", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(jsonData); err != nil {
-			http.Error(w, "failed to encode OpenAPI spec as JSON", http.StatusInternalServerError)
-		}
-	})
+	// API specification route
+	r.Get("/api/spec.json", specHandler.ServeSpec)
 
 	// Setup API routes with authentication
 	apiRouter := chi.NewRouter()
