@@ -175,20 +175,3 @@ func TestNomadService_NewNomadService(t *testing.T) {
 	assert.NotNil(t, service)
 	assert.IsType(t, &NomadService{}, service)
 }
-
-// Test basic functionality that doesn't require complex mocking
-func TestNomadService_CreationAndInterfaces(t *testing.T) {
-	// Test the constructor with actual client (but don't call methods that need API)
-	mockClient := &api.Client{}
-	standardURLs := []generated.ServiceUrl{
-		{Service: "test", Url: "https://test.com"},
-	}
-
-	service := NewNomadService(mockClient, standardURLs)
-
-	assert.NotNil(t, service)
-	assert.IsType(t, &NomadService{}, service)
-
-	// Test that the service implements the interface
-	var _ NomadServiceInterface = service
-}

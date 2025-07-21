@@ -22,7 +22,12 @@ func TestStaticHandler_ServeHome(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalWD)
+
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	webDir := "./web"
 	err = os.MkdirAll(webDir, 0755)
@@ -60,7 +65,12 @@ func TestStaticHandler_ServeHome_FileNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalWD)
+
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	handler := NewStaticHandler()
 
@@ -84,7 +94,12 @@ func TestAPISpecHandler_ServeSpec(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalWD)
+
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	apispecDir := "./apispec/spec"
 	err = os.MkdirAll(apispecDir, 0755)
@@ -136,7 +151,11 @@ func TestAPISpecHandler_ServeSpec_FileNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalWD)
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	handler := NewAPISpecHandler()
 
@@ -161,7 +180,11 @@ func TestAPISpecHandler_ServeSpec_InvalidYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalWD)
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	apispecDir := "./apispec/spec"
 	err = os.MkdirAll(apispecDir, 0755)

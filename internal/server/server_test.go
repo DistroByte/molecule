@@ -51,7 +51,9 @@ func TestRequestIDMiddleware(t *testing.T) {
 func TestAPIKeyAuthMiddleware_ValidKey(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		if _, err := w.Write([]byte("success")); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	})
 
 	middleware := APIKeyAuthMiddleware("valid-api-key")
@@ -70,7 +72,9 @@ func TestAPIKeyAuthMiddleware_ValidKey(t *testing.T) {
 func TestAPIKeyAuthMiddleware_InvalidKey(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		if _, err := w.Write([]byte("success")); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	})
 
 	middleware := APIKeyAuthMiddleware("valid-api-key")
@@ -89,7 +93,9 @@ func TestAPIKeyAuthMiddleware_InvalidKey(t *testing.T) {
 func TestAPIKeyAuthMiddleware_MissingKey(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		if _, err := w.Write([]byte("success")); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	})
 
 	middleware := APIKeyAuthMiddleware("valid-api-key")
