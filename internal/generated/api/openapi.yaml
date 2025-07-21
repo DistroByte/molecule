@@ -45,7 +45,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: "#/components/schemas/getURLs_200_response_inner"
+                  $ref: "#/components/schemas/ServiceUrl"
                 type: array
           description: successful operation
         "400":
@@ -64,7 +64,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: "#/components/schemas/getURLs_200_response_inner"
+                  $ref: "#/components/schemas/ServiceUrl"
                 type: array
           description: successful operation
         "400":
@@ -83,7 +83,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: "#/components/schemas/getURLs_200_response_inner"
+                  $ref: "#/components/schemas/ServiceUrl"
                 type: array
           description: successful operation
         "400":
@@ -102,7 +102,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: "#/components/schemas/getURLs_200_response_inner"
+                  $ref: "#/components/schemas/ServiceUrl"
                 type: array
           description: successful operation
         "400":
@@ -200,7 +200,7 @@ paths:
       summary: Restart all allocations of a service
 components:
   schemas:
-    getURLs_200_response_inner:
+    ServiceUrl:
       example:
         service: service
         icon: icon
@@ -224,6 +224,7 @@ components:
       - fetched
       - service
       - url
+      title: ServiceUrl
     getURLs_400_response:
       example:
         message: message

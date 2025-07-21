@@ -13,7 +13,7 @@ package moleculeserver
 
 
 
-type GetUrls200ResponseInner struct {
+type ServiceUrl struct {
 
 	// The service that the URL belongs to.
 	Service string `json:"service"`
@@ -28,8 +28,8 @@ type GetUrls200ResponseInner struct {
 	Icon string `json:"icon,omitempty"`
 }
 
-// AssertGetUrls200ResponseInnerRequired checks if the required fields are not zero-ed
-func AssertGetUrls200ResponseInnerRequired(obj GetUrls200ResponseInner) error {
+// AssertServiceUrlRequired checks if the required fields are not zero-ed
+func AssertServiceUrlRequired(obj ServiceUrl) error {
 	elements := map[string]interface{}{
 		"service": obj.Service,
 		"url": obj.Url,
@@ -44,7 +44,7 @@ func AssertGetUrls200ResponseInnerRequired(obj GetUrls200ResponseInner) error {
 	return nil
 }
 
-// AssertGetUrls200ResponseInnerConstraints checks if the values respects the defined constraints
-func AssertGetUrls200ResponseInnerConstraints(obj GetUrls200ResponseInner) error {
+// AssertServiceUrlConstraints checks if the values respects the defined constraints
+func AssertServiceUrlConstraints(obj ServiceUrl) error {
 	return nil
 }
