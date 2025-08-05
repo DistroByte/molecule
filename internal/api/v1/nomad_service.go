@@ -362,6 +362,11 @@ func (s *NomadService) getUrlDataFromTags(jobName string, taskName string, tags 
 		return
 	}
 
+	if slices.Contains(tags, "molecule.skip=true") {
+		logger.Log.Debug().Msgf("Skipping service %s due to molecule.skip tag", jobName)
+		return
+	}
+
 	for _, tag := range tags {
 		if traefikRuleTagRegex.MatchString(tag) {
 			url := s.extractURLFromTraefikTag(tag)
