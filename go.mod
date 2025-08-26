@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20250317133216-16bbdd983307
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/rs/zerolog v1.34.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 )
 
 require gopkg.in/yaml.v3 v3.0.1 // indirect
