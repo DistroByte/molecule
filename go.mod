@@ -3,7 +3,7 @@ module github.com/DistroByte/molecule
 go 1.23.6
 
 require (
-	github.com/getkin/kin-openapi v0.132.0
+	github.com/getkin/kin-openapi v0.133.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/nomad/api v0.0.0-20250317133216-16bbdd983307
@@ -12,7 +12,10 @@ require (
 	github.com/stretchr/testify v1.11.1
 )
 
-require gopkg.in/yaml.v3 v3.0.1 // indirect
+require (
+	github.com/woodsbury/decimal128 v1.3.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
