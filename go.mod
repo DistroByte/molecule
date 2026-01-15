@@ -4,7 +4,7 @@ go 1.23.6
 
 require (
 	github.com/getkin/kin-openapi v0.133.0
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/nomad/api v0.0.0-20250317133216-16bbdd983307
 	github.com/jedib0t/go-pretty/v6 v6.7.8
