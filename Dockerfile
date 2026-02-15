@@ -1,4 +1,4 @@
-FROM golang:1.25 as builder
+FROM golang:1.26 as builder
 
 COPY vendor /go/src/github.com/DistroByte/molecule/vendor
 COPY . /go/src/github.com/DistroByte/molecule
