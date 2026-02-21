@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright IBM Corp. 2015, 2025
 // SPDX-License-Identifier: MPL-2.0
 
 package api
@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 )
 
 const (
@@ -167,6 +167,8 @@ func (c *Client) EventStream() *EventStream {
 
 // Stream establishes a new subscription to Nomad's event stream and streams
 // results back to the returned channel.
+//
+// Events stop being emitted once the Events.Err field is non-nil.
 func (e *EventStream) Stream(ctx context.Context, topics map[Topic][]string, index uint64, q *QueryOptions) (<-chan *Events, error) {
 	r, err := e.client.newRequest("GET", "/v1/event/stream")
 	if err != nil {
@@ -181,6 +183,10 @@ func (e *EventStream) Stream(ctx context.Context, topics map[Topic][]string, ind
 
 	// Build topic query params
 	for topic, keys := range topics {
+		if len(keys) == 0 {
+			r.params.Add("topic", fmt.Sprintf("%s", topic))
+			continue
+		}
 		for _, k := range keys {
 			r.params.Add("topic", fmt.Sprintf("%s:%s", topic, k))
 		}
@@ -215,6 +221,11 @@ func (e *EventStream) Stream(ctx context.Context, topics map[Topic][]string, ind
 			case <-ctx.Done():
 				return
 			case eventsCh <- &events:
+			}
+
+			// There are no recoverable Decode errors, so return on error.
+			if events.Err != nil {
+				return
 			}
 		}
 	}()

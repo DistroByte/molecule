@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright IBM Corp. 2015, 2025
 // SPDX-License-Identifier: MPL-2.0
 
 package api
@@ -174,7 +174,8 @@ type HostVolumeListRequest struct {
 }
 
 type HostVolumeDeleteRequest struct {
-	ID string
+	ID    string
+	Force bool
 }
 
 type HostVolumeDeleteResponse struct{}
@@ -243,6 +244,9 @@ func (hv *HostVolumes) Delete(req *HostVolumeDeleteRequest, opts *WriteOptions) 
 	path, err := url.JoinPath("/v1/volume/host/", url.PathEscape(req.ID))
 	if err != nil {
 		return nil, nil, err
+	}
+	if req.Force {
+		path = path + "?force=true"
 	}
 	wm, err := hv.client.delete(path, nil, resp, opts)
 	return resp, wm, err
