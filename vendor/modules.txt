@@ -4,7 +4,7 @@ github.com/clipperhouse/uax29/v2/graphemes
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/getkin/kin-openapi v0.133.0
+# github.com/getkin/kin-openapi v0.134.0
 ## explicit; go 1.22.5
 github.com/getkin/kin-openapi/openapi3
 # github.com/go-chi/chi/v5 v5.2.5
@@ -81,15 +81,13 @@ github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/mapstructure v1.5.0
-## explicit; go 1.14
 # github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 ## explicit
 github.com/mohae/deepcopy
-# github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037
+# github.com/oasdiff/yaml v0.0.0-20260313112342-a3ea61cb4d4c
 ## explicit; go 1.22.5
 github.com/oasdiff/yaml
-# github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90
+# github.com/oasdiff/yaml3 v0.0.0-20260224194419-61cd415a242b
 ## explicit; go 1.22.5
 github.com/oasdiff/yaml3
 # github.com/perimeterx/marshmallow v1.1.5
@@ -98,8 +96,6 @@ github.com/perimeterx/marshmallow
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/rivo/uniseg v0.4.7
-## explicit; go 1.18
 # github.com/rs/zerolog v1.34.0
 ## explicit; go 1.15
 github.com/rs/zerolog
