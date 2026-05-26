@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/nomad/api v0.0.0-20260220212019-daca79db0bd6
 	github.com/jedib0t/go-pretty/v6 v6.7.8
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
 )
 
