@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/nomad/api v0.0.0-20260220212019-daca79db0bd6
-	github.com/jedib0t/go-pretty/v6 v6.7.10
+	github.com/jedib0t/go-pretty/v6 v6.8.0
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
 )
