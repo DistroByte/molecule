@@ -4,7 +4,7 @@ github.com/clipperhouse/uax29/v2/graphemes
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/getkin/kin-openapi v0.140.0
+# github.com/getkin/kin-openapi v0.142.0
 ## explicit; go 1.25
 github.com/getkin/kin-openapi/openapi3
 # github.com/go-chi/chi/v5 v5.3.0
@@ -75,11 +75,11 @@ github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/oasdiff/yaml v0.1.0
-## explicit; go 1.22.5
+# github.com/oasdiff/yaml v0.1.1
+## explicit; go 1.25
 github.com/oasdiff/yaml
-# github.com/oasdiff/yaml3 v0.0.13
-## explicit; go 1.22.5
+# github.com/oasdiff/yaml3 v0.0.14
+## explicit; go 1.25
 github.com/oasdiff/yaml3
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
