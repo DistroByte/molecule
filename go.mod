@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20260220212019-daca79db0bd6
 	github.com/jedib0t/go-pretty/v6 v6.8.1
 	github.com/rs/zerolog v1.35.1
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.0
 )
 
 require (
@@ -22,7 +22,6 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -37,7 +36,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/oasdiff/yaml v0.1.0 // indirect
 	github.com/oasdiff/yaml3 v0.0.13 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 )
